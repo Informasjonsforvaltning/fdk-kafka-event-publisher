@@ -1,21 +1,27 @@
-use lapin::{
-    message::DeliveryResult,
-    options::{BasicAckOptions, BasicConsumeOptions, QueueBindOptions, QueueDeclareOptions},
-    types::FieldTable,
-    Connection, ConnectionProperties,
+use std::{
+    env,
+    time::{SystemTime, UNIX_EPOCH},
 };
-use serde::Deserialize;
 
-#[derive(Deserialize)]
-pub struct HarvestReport {
-    #[serde(alias = "changedResources")]
-    changed_resources: Vec<HarvestReportChange>,
-}
+use error::Error;
+use kafka::create_sr_settings;
+use lapin::{message::DeliveryResult, options::BasicAckOptions};
+use lazy_static::lazy_static;
+use rabbit::HarvestReport;
+use reqwest::StatusCode;
+use schema_registry_converter::async_impl::avro::AvroEncoder;
+use schemas::setup_schemas;
 
-#[derive(Deserialize)]
-pub struct HarvestReportChange {
-    #[serde(alias = "fdkId")]
-    fdk_id: String,
+use crate::{kafka::send_event, schemas::DatasetEvent};
+
+mod error;
+mod kafka;
+mod rabbit;
+mod schemas;
+
+lazy_static! {
+    pub static ref HARVESTER_API_URL: String =
+        env::var("HARVESTER_API_URL").unwrap_or("http://localhost:8080".to_string());
 }
 
 #[tokio::main]
@@ -27,63 +33,48 @@ async fn main() {
         .with_current_span(false)
         .init();
 
-    let username = "admin".to_string();
-    let password = "admin".to_string();
-    let host = "127.0.0.1".to_string();
-    let port = 5672;
-    let uri = format!("amqp://{}:{}@{}:{}/%2f", username, password, host, port);
+    let sr_settings = create_sr_settings().unwrap();
+    setup_schemas(&sr_settings).await.unwrap();
 
-    let options = ConnectionProperties::default()
-        .with_executor(tokio_executor_trait::Tokio::current())
-        .with_reactor(tokio_reactor_trait::Tokio);
-
-    let connection = Connection::connect(&uri, options).await.unwrap();
-    let channel = connection.create_channel().await.unwrap();
-
-    let _queue = channel
-        .queue_declare(
-            "fdk-dataset-event-publisher",
-            QueueDeclareOptions::default(),
-            FieldTable::default(),
-        )
+    let channel = rabbit::connect().await.expect("unable to connect");
+    rabbit::setup(&channel)
         .await
-        .expect("unable to create queue");
-
-    channel
-        .queue_bind(
-            "fdk-dataset-event-publisher",
-            "harvests",
-            "datasets.harvested",
-            QueueBindOptions::default(),
-            FieldTable::default(),
-        )
+        .expect("unable to setup rabbit queue");
+    let consumer = rabbit::create_consumer(&channel)
         .await
-        .expect("unable to bind excange to queue");
-
-    let consumer = channel
-        .basic_consume(
-            "fdk-dataset-event-publisher",
-            "fdk-dataset-event-publisher",
-            BasicConsumeOptions::default(),
-            FieldTable::default(),
-        )
-        .await
-        .expect("unable to create queue consumer");
+        .expect("unable to create consumer");
 
     consumer.set_delegate(move |delivery: DeliveryResult| async move {
         let delivery = match delivery {
             Ok(Some(delivery)) => delivery,
             Ok(None) => return,
             Err(error) => {
-                dbg!("Failed to consume queue message {}", error);
+                tracing::error!("failed to consume queue message {}", error);
                 return;
             }
         };
 
+        let producer = kafka::create_producer().unwrap();
+        let client = reqwest::Client::new();
+        let sr_settings = create_sr_settings().unwrap();
+        let mut encoder = AvroEncoder::new(sr_settings);
+
         let report: Vec<HarvestReport> = serde_json::from_slice(&delivery.data).unwrap();
         for element in report {
             for resource in element.changed_resources {
-                println!("{}", resource.fdk_id);
+                tracing::info!("id: {}", resource.fdk_id);
+                let graph = get_graph(&client, &resource.fdk_id).await.unwrap().unwrap();
+                let timestamp = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs() as i64;
+                let message = DatasetEvent {
+                    event_type: schemas::DatasetEventType::DatasetHarvested,
+                    fdk_id: resource.fdk_id,
+                    graph,
+                    timestamp,
+                };
+                send_event(&mut encoder, &producer, message).await.unwrap();
             }
         }
 
@@ -94,4 +85,22 @@ async fn main() {
     });
 
     tokio::time::sleep(tokio::time::Duration::MAX).await;
+}
+
+async fn get_graph(client: &reqwest::Client, id: &String) -> Result<Option<String>, Error> {
+    let response = client
+        .get(format!("{}/datasets/{}", HARVESTER_API_URL.clone(), id))
+        .send()
+        .await?;
+
+    match response.status() {
+        StatusCode::NOT_FOUND => Ok(None),
+        StatusCode::OK => Ok(Some(response.text().await?)),
+        _ => Err(format!(
+            "Invalid response from harvester: {} - {}",
+            response.status(),
+            response.text().await?
+        )
+        .into()),
+    }
 }
