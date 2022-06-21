@@ -30,15 +30,12 @@ fn var(key: &'static str) -> Result<String, RabbitError> {
 }
 
 fn connection_string() -> Result<String, RabbitError> {
-    let username = var("RABBIT_USER")?;
-    let password = var("RABBIT_PASSWORD")?;
+    let user = var("RABBIT_USER")?;
+    let pass = var("RABBIT_PASS")?;
     let host = var("RABBIT_HOST")?;
-    let port = 5672;
+    let port = var("RABBIT_PORT")?;
 
-    Ok(format!(
-        "amqp://{}:{}@{}:{}/%2f",
-        username, password, host, port
-    ))
+    Ok(format!("amqp://{}:{}@{}:{}/%2f", user, pass, host, port))
 }
 
 pub async fn connect() -> Result<Channel, RabbitError> {
