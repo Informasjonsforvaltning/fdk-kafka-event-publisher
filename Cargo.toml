@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 avro-rs = "0.13.0"
+chrono = "0.4.19"
 lapin = "2.1.1"
 lazy_static = "1.4.0"
 rdkafka = "0.28.0"

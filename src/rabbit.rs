@@ -15,6 +15,8 @@ pub enum RabbitError {
 
 #[derive(Deserialize)]
 pub struct HarvestReport {
+    #[serde(alias = "startTime")]
+    pub start_time: String,
     #[serde(alias = "changedResources")]
     pub changed_resources: Vec<HarvestReportChange>,
 }

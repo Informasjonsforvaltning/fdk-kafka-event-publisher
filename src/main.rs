@@ -1,8 +1,6 @@
-use std::{
-    env,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::env;
 
+use chrono::DateTime;
 use error::Error;
 use kafka::create_sr_settings;
 use lapin::{message::DeliveryResult, options::BasicAckOptions};
@@ -61,13 +59,14 @@ async fn main() {
 
         let report: Vec<HarvestReport> = serde_json::from_slice(&delivery.data).unwrap();
         for element in report {
+            let timestamp = DateTime::parse_from_str(&element.start_time, "%Y-%m-%d %H:%M:%S %z")
+                .unwrap()
+                .timestamp_millis();
+
             for resource in element.changed_resources {
-                tracing::info!("id: {}", resource.fdk_id);
+                tracing::info!(id = resource.fdk_id.as_str(), "processing dataset");
                 let graph = get_graph(&client, &resource.fdk_id).await.unwrap().unwrap();
-                let timestamp = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs() as i64;
+
                 let message = DatasetEvent {
                     event_type: schemas::DatasetEventType::DatasetHarvested,
                     fdk_id: resource.fdk_id,
