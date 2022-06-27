@@ -61,7 +61,7 @@ async fn main() {
         for element in report {
             let timestamp = DateTime::parse_from_str(&element.start_time, "%Y-%m-%d %H:%M:%S %z")
                 .unwrap()
-                .timestamp_millis();
+                .timestamp();
 
             for resource in element.changed_resources {
                 tracing::info!(id = resource.fdk_id.as_str(), "processing dataset");
