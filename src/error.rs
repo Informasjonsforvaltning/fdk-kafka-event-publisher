@@ -6,6 +6,10 @@ pub enum Error {
     RabbitError(#[from] crate::rabbit::RabbitError),
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
+    #[error(transparent)]
+    SerdeError(#[from] serde_json::Error),
+    #[error(transparent)]
+    ChronoParseError(#[from] chrono::ParseError),
     #[error("{0}")]
     String(String),
 }
