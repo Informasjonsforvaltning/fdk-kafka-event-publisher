@@ -54,6 +54,7 @@ pub async fn send_event(
     producer: &FutureProducer,
     event: DatasetEvent,
 ) -> Result<(), KafkaError> {
+    let key = event.fdk_id.clone();
     let encoded = encoder
         .encode_struct(
             event,
@@ -61,7 +62,8 @@ pub async fn send_event(
         )
         .await?;
 
-    let record: FutureRecord<String, Vec<u8>> = FutureRecord::to(&OUTPUT_TOPIC).payload(&encoded);
+    let record: FutureRecord<String, Vec<u8>> =
+        FutureRecord::to(&OUTPUT_TOPIC).key(&key).payload(&encoded);
     producer
         .send(record, Duration::from_secs(0))
         .await
