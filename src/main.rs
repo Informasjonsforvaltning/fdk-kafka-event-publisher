@@ -49,7 +49,7 @@ lazy_static! {
 async fn main() {
     tracing_subscriber::fmt()
         .json()
-        .with_max_level(tracing::Level::INFO)
+        .with_max_level(tracing::Level::DEBUG)
         .with_target(false)
         .with_current_span(false)
         .init();
@@ -117,11 +117,11 @@ async fn handle_message(
     let mut encoder = AvroEncoder::new(sr_settings);
 
     for element in report {
-        let timestamp =
-            DateTime::parse_from_str(&element.start_time, "%Y-%m-%d %H:%M:%S %z")?.timestamp();
+        let timestamp = DateTime::parse_from_str(&element.start_time, "%Y-%m-%d %H:%M:%S%.f %z")?
+            .timestamp_millis();
 
         for resource in element.changed_resources {
-            tracing::info!(id = resource.fdk_id.as_str(), "Processing dataset");
+            tracing::debug!(id = resource.fdk_id.as_str(), "Processing dataset");
             if let Some(graph) = get_graph(&client, &resource.fdk_id).await? {
                 let message = DatasetEvent {
                     event_type: schemas::DatasetEventType::DatasetHarvested,
