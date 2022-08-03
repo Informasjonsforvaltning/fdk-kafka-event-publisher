@@ -23,39 +23,52 @@ pub struct DatasetEvent {
     pub timestamp: i64,
 }
 
-#[instrument]
-pub async fn setup_schemas(sr_settings: &SrSettings) -> Result<u32, KafkaError> {
-    let schema = SuppliedSchema {
-        name: Some("no.fdk.dataset.DatasetEvent".to_string()),
-        schema_type: SchemaType::Avro,
-        schema: r#"{
-                "name": "DatasetEvent",
-                "namespace": "no.fdk.dataset",
-                "type": "record",
-                "fields": [
-                    {
-                        "name": "type",
-                        "type": {
-                            "type": "enum",
-                            "name": "DatasetEventType",
-                            "symbols": ["DATASET_HARVESTED"]
-                        }
-                    },
-                    {"name": "fdkId", "type": "string"},
-                    {"name": "graph", "type": "string"},
-                    {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
-                ]
-            }"#
-        .to_string(),
-        references: vec![],
-    };
-
-    tracing::info!("registering schema");
-    let result = post_schema(
+pub async fn setup_schemas(sr_settings: &SrSettings) -> Result<(), Error> {
+    register_schema(
         sr_settings,
-        "no.fdk.dataset.DatasetEvent".to_string(),
-        schema,
+        "no.fdk.dataset.DatasetEvent",
+        r#"{
+            "name": "DatasetEvent",
+            "namespace": "no.fdk.dataset",
+            "type": "record",
+            "fields": [
+                {
+                    "name": "type",
+                    "type": {
+                        "type": "enum",
+                        "name": "DatasetEventType",
+                        "symbols": ["DATASET_HARVESTED"]
+                    }
+                },
+                {"name": "fdkId", "type": "string"},
+                {"name": "graph", "type": "string"},
+                {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
+            ]
+        }"#,
     )
     .await?;
-    Ok(result.id)
+    Ok(())
+}
+
+pub async fn register_schema(
+    sr_settings: &SrSettings,
+    name: &str,
+    schema_str: &str,
+) -> Result<(), Error> {
+    tracing::info!(name, "registering schema");
+
+    let schema = post_schema(
+        sr_settings,
+        name.to_string(),
+        SuppliedSchema {
+            name: Some(name.to_string()),
+            schema_type: SchemaType::Avro,
+            schema: schema_str.to_string(),
+            references: vec![],
+        },
+    )
+    .await?;
+
+    tracing::info!(id = schema.id, name, "schema succesfully registered");
+    Ok(())
 }

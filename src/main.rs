@@ -14,7 +14,10 @@ use reqwest::StatusCode;
 use schema_registry_converter::async_impl::{avro::AvroEncoder, schema_registry::SrSettings};
 use schemas::setup_schemas;
 
-use crate::{kafka::send_event, schemas::DatasetEvent};
+use crate::{
+    kafka::{send_event, BROKERS},
+    schemas::DatasetEvent,
+};
 
 mod error;
 mod kafka;
@@ -25,22 +28,16 @@ lazy_static! {
     pub static ref HARVESTER_API_URL: String =
         env::var("HARVESTER_API_URL").unwrap_or("http://localhost:8080".to_string());
     pub static ref PRODUCER: FutureProducer = kafka::create_producer().unwrap_or_else(|e| {
-        tracing::error!(
-            error = e.to_string().as_str(),
-            "Kafka producer creation error"
-        );
+        tracing::error!(error = e.to_string(), "kafka producer creation error");
         std::process::exit(1);
     });
     pub static ref CLIENT: reqwest::Client =
         reqwest::ClientBuilder::new().build().unwrap_or_else(|e| {
-            tracing::error!(
-                error = e.to_string().as_str(),
-                "reqwest client creation error"
-            );
+            tracing::error!(error = e.to_string(), "reqwest client creation error");
             std::process::exit(1);
         });
     pub static ref SR_SETTINGS: SrSettings = create_sr_settings().unwrap_or_else(|e| {
-        tracing::error!(error = e.to_string().as_str(), "SrSettings creation error");
+        tracing::error!(error = e.to_string(), "sr settings creation error");
         std::process::exit(1);
     });
 }
@@ -49,29 +46,35 @@ lazy_static! {
 async fn main() {
     tracing_subscriber::fmt()
         .json()
-        .with_max_level(tracing::Level::DEBUG)
+        .with_max_level(tracing::Level::INFO)
         .with_target(false)
         .with_current_span(false)
         .init();
 
+    tracing::info!(
+        brokers = BROKERS.to_string(),
+        schema_registry = SCHEMA_REGISTRY.to_string(),
+        output_topic = OUTPUT_TOPIC.to_string(),
+        scoring_api_url = SCORING_API_URL.to_string(),
+        harvester_api_url = HARVESTER_API_URL.to_string(),
+        "starting service"
+    );
+
     setup_schemas(&SR_SETTINGS).await.unwrap_or_else(|e| {
-        tracing::error!(error = e.to_string().as_str(), "Schema registration error");
+        tracing::error!(error = e.to_string(), "schema registration error");
         std::process::exit(1);
     });
 
     let channel = rabbit::connect().await.unwrap_or_else(|e| {
-        tracing::error!(error = e.to_string().as_str(), "Rabbit connection error");
+        tracing::error!(error = e.to_string(), "rabbit connection error");
         std::process::exit(1);
     });
     rabbit::setup(&channel).await.unwrap_or_else(|e| {
-        tracing::error!(error = e.to_string().as_str(), "Rabbit setup error");
+        tracing::error!(error = e.to_string(), "rabbit setup error");
         std::process::exit(1);
     });
     let consumer = rabbit::create_consumer(&channel).await.unwrap_or_else(|e| {
-        tracing::error!(
-            error = e.to_string().as_str(),
-            "Rabbit consumer creation error"
-        );
+        tracing::error!(error = e.to_string(), "rabbit consumer creation error");
         std::process::exit(1);
     });
 
@@ -80,28 +83,20 @@ async fn main() {
             Ok(Some(delivery)) => delivery,
             Ok(None) => return,
             Err(error) => {
-                tracing::error!(
-                    error = error.to_string().as_str(),
-                    "Failed to consume message"
-                );
+                tracing::error!(error = error.to_string(), "failed to consume message");
                 return;
             }
         };
 
         match handle_message(&PRODUCER, &CLIENT, SR_SETTINGS.clone(), &delivery).await {
-            Ok(_) => tracing::info!("Successfully processed message"),
-            Err(e) => tracing::error!(
-                error = e.to_string().as_str(),
-                "Failed when processing message"
-            ),
+            Ok(_) => tracing::info!("message processed successfully"),
+            Err(e) => tracing::error!(error = e.to_string(), "failed when processing message"),
         };
 
         delivery
             .ack(BasicAckOptions::default())
             .await
-            .unwrap_or_else(|e| {
-                tracing::error!(error = e.to_string().as_str(), "Failed to ack message")
-            });
+            .unwrap_or_else(|e| tracing::error!(error = e.to_string(), "failed to ack message"));
     });
 
     tokio::time::sleep(tokio::time::Duration::MAX).await;
@@ -121,7 +116,7 @@ async fn handle_message(
             .timestamp_millis();
 
         for resource in element.changed_resources {
-            tracing::debug!(id = resource.fdk_id.as_str(), "Processing dataset");
+            tracing::debug!(id = resource.fdk_id.as_str(), "processing dataset");
             if let Some(graph) = get_graph(&client, &resource.fdk_id).await? {
                 let message = DatasetEvent {
                     event_type: schemas::DatasetEventType::DatasetHarvested,
@@ -132,10 +127,7 @@ async fn handle_message(
 
                 send_event(&mut encoder, &producer, message).await?;
             } else {
-                tracing::error!(
-                    id = resource.fdk_id.as_str(),
-                    "Graph not found in harvester"
-                );
+                tracing::error!(id = resource.fdk_id, "graph not found in harvester");
             }
         }
     }

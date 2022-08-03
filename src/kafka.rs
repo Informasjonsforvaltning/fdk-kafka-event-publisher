@@ -29,15 +29,16 @@ pub enum KafkaError {
 
 pub fn create_sr_settings() -> Result<SrSettings, KafkaError> {
     let mut schema_registry_urls = SCHEMA_REGISTRY.split(",");
+
     let mut sr_settings_builder =
         SrSettings::new_builder(schema_registry_urls.next().unwrap_or_default().to_string());
     schema_registry_urls.for_each(|url| {
         sr_settings_builder.add_url(url.to_string());
     });
+
     let sr_settings = sr_settings_builder
         .set_timeout(Duration::from_secs(5))
         .build()?;
-
     Ok(sr_settings)
 }
 
