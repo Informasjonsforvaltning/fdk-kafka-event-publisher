@@ -15,7 +15,7 @@ use schema_registry_converter::async_impl::{avro::AvroEncoder, schema_registry::
 use schemas::setup_schemas;
 
 use crate::{
-    kafka::{send_event, BROKERS},
+    kafka::{send_event, BROKERS, OUTPUT_TOPIC, SCHEMA_REGISTRY},
     schemas::DatasetEvent,
 };
 
@@ -55,7 +55,6 @@ async fn main() {
         brokers = BROKERS.to_string(),
         schema_registry = SCHEMA_REGISTRY.to_string(),
         output_topic = OUTPUT_TOPIC.to_string(),
-        scoring_api_url = SCORING_API_URL.to_string(),
         harvester_api_url = HARVESTER_API_URL.to_string(),
         "starting service"
     );

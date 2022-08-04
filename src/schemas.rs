@@ -3,11 +3,10 @@ use schema_registry_converter::{
     schema_registry_common::{SchemaType, SuppliedSchema},
 };
 use serde_derive::Serialize;
-use tracing::instrument;
 
 use crate::kafka::KafkaError;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Serialize)]
 pub enum DatasetEventType {
     #[serde(rename = "DATASET_HARVESTED")]
     DatasetHarvested,
@@ -23,7 +22,7 @@ pub struct DatasetEvent {
     pub timestamp: i64,
 }
 
-pub async fn setup_schemas(sr_settings: &SrSettings) -> Result<(), Error> {
+pub async fn setup_schemas(sr_settings: &SrSettings) -> Result<(), KafkaError> {
     register_schema(
         sr_settings,
         "no.fdk.dataset.DatasetEvent",
@@ -54,7 +53,7 @@ pub async fn register_schema(
     sr_settings: &SrSettings,
     name: &str,
     schema_str: &str,
-) -> Result<(), Error> {
+) -> Result<(), KafkaError> {
     tracing::info!(name, "registering schema");
 
     let schema = post_schema(

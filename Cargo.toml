@@ -20,4 +20,3 @@ tokio-executor-trait = "2.1.0"
 tokio-reactor-trait = "1.1.0"
 tracing = "0.1.36"
 tracing-subscriber =  { version = "0.3.11", features = ["json"] }
-
