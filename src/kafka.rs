@@ -1,3 +1,5 @@
+use std::{env, time::Duration};
+
 use lazy_static::lazy_static;
 use rdkafka::{
     producer::{FutureProducer, FutureRecord},
@@ -7,7 +9,6 @@ use schema_registry_converter::{
     async_impl::{avro::AvroEncoder, schema_registry::SrSettings},
     schema_registry_common::SubjectNameStrategy,
 };
-use std::{env, time::Duration};
 
 use crate::schemas::DatasetEvent;
 
