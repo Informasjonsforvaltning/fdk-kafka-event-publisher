@@ -108,6 +108,7 @@ async fn handle_message(
     delivery: &Delivery,
 ) -> Result<(), Error> {
     let report: Vec<HarvestReport> = serde_json::from_slice(&delivery.data)?;
+    tracing::info!(elements = report.len(), "processing event");
     let mut encoder = AvroEncoder::new(sr_settings);
 
     for element in report {
