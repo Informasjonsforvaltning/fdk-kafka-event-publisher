@@ -83,7 +83,7 @@ async fn main() {
             Ok(None) => return,
             Err(error) => {
                 tracing::error!(error = error.to_string(), "failed to consume message");
-                return;
+                std::process::exit(1);
             }
         };
 
