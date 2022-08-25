@@ -1,5 +1,6 @@
-use std::env;
+use std::{env, time::Instant};
 
+use actix_web::{get, App, HttpServer, Responder};
 use chrono::DateTime;
 use error::Error;
 use kafka::create_sr_settings;
@@ -16,11 +17,13 @@ use schemas::setup_schemas;
 
 use crate::{
     kafka::{send_event, BROKERS, OUTPUT_TOPIC, SCHEMA_REGISTRY},
+    metrics::{get_metrics, register_metrics, PROCESSED_MESSAGES, PROCESSING_TIME},
     schemas::DatasetEvent,
 };
 
 mod error;
 mod kafka;
+mod metrics;
 mod rabbit;
 mod schemas;
 
@@ -42,6 +45,27 @@ lazy_static! {
     });
 }
 
+#[get("/ping")]
+async fn ping() -> impl Responder {
+    "pong"
+}
+
+#[get("/ready")]
+async fn ready() -> impl Responder {
+    "ok"
+}
+
+#[get("/metrics")]
+async fn metrics_service() -> impl Responder {
+    match get_metrics() {
+        Ok(metrics) => metrics,
+        Err(e) => {
+            tracing::error!(error = e.to_string(), "unable to gather metrics");
+            "".to_string()
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
@@ -50,6 +74,8 @@ async fn main() {
         .with_target(false)
         .with_current_span(false)
         .init();
+
+    register_metrics();
 
     tracing::info!(
         brokers = BROKERS.to_string(),
@@ -87,10 +113,24 @@ async fn main() {
             }
         };
 
-        match handle_message(&PRODUCER, &CLIENT, SR_SETTINGS.clone(), &delivery).await {
-            Ok(_) => tracing::info!("message processed successfully"),
-            Err(e) => tracing::error!(error = e.to_string(), "failed when processing message"),
+        let start_time = Instant::now();
+        let result = handle_message(&PRODUCER, &CLIENT, SR_SETTINGS.clone(), &delivery).await;
+        let elapsed_millis = start_time.elapsed().as_millis();
+        match result {
+            Ok(_) => {
+                tracing::info!(elapsed_millis, "message handled successfully");
+                PROCESSED_MESSAGES.with_label_values(&["success"]).inc();
+            }
+            Err(e) => {
+                tracing::error!(
+                    elapsed_millis,
+                    error = e.to_string(),
+                    "failed while handling message"
+                );
+                PROCESSED_MESSAGES.with_label_values(&["error"]).inc();
+            }
         };
+        PROCESSING_TIME.observe(elapsed_millis as f64 / 1000.0);
 
         delivery
             .ack(BasicAckOptions::default())
@@ -98,7 +138,23 @@ async fn main() {
             .unwrap_or_else(|e| tracing::error!(error = e.to_string(), "failed to ack message"));
     });
 
-    tokio::time::sleep(tokio::time::Duration::MAX).await;
+    HttpServer::new(|| {
+        App::new()
+            .service(ping)
+            .service(ready)
+            .service(metrics_service)
+    })
+    .bind(("0.0.0.0", 8000))
+    .unwrap_or_else(|e| {
+        tracing::error!(error = e.to_string(), "metrics server error");
+        std::process::exit(1);
+    })
+    .run()
+    .await
+    .unwrap_or_else(|e| {
+        tracing::error!(error = e.to_string(), "failed to run metrics server");
+        std::process::exit(1);
+    });
 }
 
 async fn handle_message(
@@ -107,11 +163,20 @@ async fn handle_message(
     sr_settings: SrSettings,
     delivery: &Delivery,
 ) -> Result<(), Error> {
-    let report: Vec<HarvestReport> = serde_json::from_slice(&delivery.data)?;
-    tracing::info!(elements = report.len(), "processing event");
+    let reports: Vec<HarvestReport> = serde_json::from_slice(&delivery.data)?;
+    let changed_resources = reports
+        .iter()
+        .map(|element| element.changed_resources.len())
+        .sum::<usize>();
+
+    tracing::info!(
+        reports = reports.len(),
+        changed_resources,
+        "processing event"
+    );
     let mut encoder = AvroEncoder::new(sr_settings);
 
-    for element in report {
+    for element in reports {
         let timestamp = DateTime::parse_from_str(&element.start_time, "%Y-%m-%d %H:%M:%S%.f %z")?
             .timestamp_millis();
 
