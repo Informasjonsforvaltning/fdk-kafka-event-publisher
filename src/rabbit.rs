@@ -32,8 +32,8 @@ fn var(key: &'static str) -> Result<String, RabbitError> {
 }
 
 fn connection_string() -> Result<String, RabbitError> {
-    let user = var("RABBIT_USER")?;
-    let pass = var("RABBIT_PASS")?;
+    let user = var("RABBIT_USERNAME")?;
+    let pass = var("RABBIT_PASSWORD")?;
     let host = var("RABBIT_HOST")?;
     let port = var("RABBIT_PORT")?;
 
