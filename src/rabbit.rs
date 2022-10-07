@@ -32,10 +32,10 @@ fn var(key: &'static str) -> Result<String, RabbitError> {
 }
 
 fn connection_string() -> Result<String, RabbitError> {
-    let user = var("RABBIT_USERNAME")?;
-    let pass = var("RABBIT_PASSWORD")?;
-    let host = var("RABBIT_HOST")?;
-    let port = var("RABBIT_PORT")?;
+    let user = var("RABBITMQ_USERNAME")?;
+    let pass = var("RABBITMQ_PASSWORD")?;
+    let host = var("RABBITMQ_HOST")?;
+    let port = var("RABBITMQ_PORT")?;
 
     Ok(format!("amqp://{}:{}@{}:{}/%2f", user, pass, host, port))
 }
