@@ -213,7 +213,11 @@ async fn handle_dataset_message(
         .sum::<usize>();
     let removed_resource_count = reports
         .iter()
-        .map(|element| element.removed_resources.len())
+        .map(|element| {
+            element
+                .removed_resources
+                .map_or(0, |resources| resources.len())
+        })
         .sum::<usize>();
 
     tracing::info!(
@@ -245,17 +249,19 @@ async fn handle_dataset_message(
             }
         }
 
-        for resource in element.removed_resources {
-            tracing::debug!(id = resource.fdk_id.as_str(), "processing removed dataset");
-            let message = DatasetEvent {
-                event_type: schemas::DatasetEventType::DatasetRemoved,
-                fdk_id: resource.fdk_id,
-                // TODO: this should probably not be empty string
-                graph: "".to_string(),
-                timestamp,
-            };
+        if let Some(removed_resources) = element.removed_resources {
+            for resource in removed_resources {
+                tracing::debug!(id = resource.fdk_id.as_str(), "processing removed dataset");
+                let message = DatasetEvent {
+                    event_type: schemas::DatasetEventType::DatasetRemoved,
+                    fdk_id: resource.fdk_id,
+                    // TODO: this should probably not be empty string
+                    graph: "".to_string(),
+                    timestamp,
+                };
 
-            send_event(&mut encoder, &producer, message).await?;
+                send_event(&mut encoder, &producer, message).await?;
+            }
         }
     }
 

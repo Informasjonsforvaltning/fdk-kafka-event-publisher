@@ -20,7 +20,7 @@ pub struct HarvestReport {
     #[serde(alias = "changedResources")]
     pub changed_resources: Vec<HarvestReportChange>,
     #[serde(alias = "removedResources")]
-    pub removed_resources: Vec<HarvestReportChange>,
+    pub removed_resources: Option<Vec<HarvestReportChange>>,
 }
 
 #[derive(Deserialize)]
