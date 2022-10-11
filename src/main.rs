@@ -245,7 +245,7 @@ async fn handle_dataset_message(
 
                 send_event(&mut encoder, &producer, message).await?;
             } else {
-                tracing::error!(id = resource.fdk_id, "graph not found in harvester");
+                tracing::error!(id = resource.fdk_id, "graph not found");
             }
         }
 
