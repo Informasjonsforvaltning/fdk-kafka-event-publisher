@@ -72,6 +72,16 @@ pub async fn setup(channel: &Channel) -> Result<(), RabbitError> {
         )
         .await?;
 
+    channel
+        .queue_bind(
+            "fdk-dataset-event-publisher",
+            "harvests",
+            "datasets.reasoned",
+            QueueBindOptions::default(),
+            FieldTable::default(),
+        )
+        .await?;
+
     Ok(())
 }
 
