@@ -164,14 +164,19 @@ async fn handle_message(
     delivery: &Delivery,
 ) -> Result<(), Error> {
     let reports: Vec<HarvestReport> = serde_json::from_slice(&delivery.data)?;
-    let changed_resources = reports
+    let changed_resource_count = reports
         .iter()
         .map(|element| element.changed_resources.len())
+        .sum::<usize>();
+    let removed_resource_count = reports
+        .iter()
+        .map(|element| element.removed_resources.len())
         .sum::<usize>();
 
     tracing::info!(
         reports = reports.len(),
-        changed_resources,
+        changed_resource_count,
+        removed_resource_count,
         "processing event"
     );
     let mut encoder = AvroEncoder::new(sr_settings);
@@ -181,7 +186,7 @@ async fn handle_message(
             .timestamp_millis();
 
         for resource in element.changed_resources {
-            tracing::debug!(id = resource.fdk_id.as_str(), "processing dataset");
+            tracing::debug!(id = resource.fdk_id.as_str(), "processing changed dataset");
             if let Some(graph) = get_graph(&client, &resource.fdk_id).await? {
                 let message = DatasetEvent {
                     event_type: schemas::DatasetEventType::DatasetHarvested,
@@ -194,6 +199,19 @@ async fn handle_message(
             } else {
                 tracing::error!(id = resource.fdk_id, "graph not found in harvester");
             }
+        }
+
+        for resource in element.removed_resources {
+            tracing::debug!(id = resource.fdk_id.as_str(), "processing removed dataset");
+            let message = DatasetEvent {
+                event_type: schemas::DatasetEventType::DatasetRemoved,
+                fdk_id: resource.fdk_id,
+                // TODO: this should probably not be empty string
+                graph: "".to_string(),
+                timestamp,
+            };
+
+            send_event(&mut encoder, &producer, message).await?;
         }
     }
 

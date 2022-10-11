@@ -19,6 +19,8 @@ pub struct HarvestReport {
     pub start_time: String,
     #[serde(alias = "changedResources")]
     pub changed_resources: Vec<HarvestReportChange>,
+    #[serde(alias = "removedResources")]
+    pub removed_resources: Vec<HarvestReportChange>,
 }
 
 #[derive(Deserialize)]
