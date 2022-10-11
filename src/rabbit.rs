@@ -20,7 +20,7 @@ pub struct HarvestReport {
     #[serde(alias = "changedResources")]
     pub changed_resources: Vec<HarvestReportChange>,
     #[serde(alias = "removedResources")]
-    pub removed_resources: Vec<HarvestReportChange>,
+    pub removed_resources: Option<Vec<HarvestReportChange>>,
 }
 
 #[derive(Deserialize)]
@@ -67,6 +67,16 @@ pub async fn setup(channel: &Channel) -> Result<(), RabbitError> {
             "fdk-dataset-event-publisher",
             "harvests",
             "datasets.harvested",
+            QueueBindOptions::default(),
+            FieldTable::default(),
+        )
+        .await?;
+
+    channel
+        .queue_bind(
+            "fdk-dataset-event-publisher",
+            "harvests",
+            "datasets.reasoned",
             QueueBindOptions::default(),
             FieldTable::default(),
         )

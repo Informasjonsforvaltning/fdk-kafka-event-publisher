@@ -30,6 +30,8 @@ mod schemas;
 lazy_static! {
     pub static ref HARVESTER_API_URL: String =
         env::var("HARVESTER_API_URL").unwrap_or("http://localhost:8080".to_string());
+    pub static ref REASONING_API_URL: String =
+        env::var("REASONING_API_URL").unwrap_or("http://localhost:8081".to_string());
     pub static ref PRODUCER: FutureProducer = kafka::create_producer().unwrap_or_else(|e| {
         tracing::error!(error = e.to_string(), "kafka producer creation error");
         std::process::exit(1);
@@ -163,6 +165,47 @@ async fn handle_message(
     sr_settings: SrSettings,
     delivery: &Delivery,
 ) -> Result<(), Error> {
+    match delivery.routing_key.as_str() {
+        "datasets.harvested" => {
+            handle_dataset_message(
+                producer,
+                client,
+                sr_settings,
+                delivery,
+                HARVESTER_API_URL.as_str(),
+                schemas::DatasetEventType::DatasetHarvested,
+            )
+            .await
+        }
+        "datasets.reasoned" => {
+            handle_dataset_message(
+                producer,
+                client,
+                sr_settings,
+                delivery,
+                REASONING_API_URL.as_str(),
+                schemas::DatasetEventType::DatasetReasoned,
+            )
+            .await
+        }
+        _ => {
+            tracing::error!(
+                routing_key = delivery.routing_key.as_str(),
+                "unknown event received"
+            );
+            Ok(())
+        }
+    }
+}
+
+async fn handle_dataset_message(
+    producer: &FutureProducer,
+    client: &reqwest::Client,
+    sr_settings: SrSettings,
+    delivery: &Delivery,
+    base_url: &str,
+    event_type: schemas::DatasetEventType,
+) -> Result<(), Error> {
     let reports: Vec<HarvestReport> = serde_json::from_slice(&delivery.data)?;
     let changed_resource_count = reports
         .iter()
@@ -170,10 +213,16 @@ async fn handle_message(
         .sum::<usize>();
     let removed_resource_count = reports
         .iter()
-        .map(|element| element.removed_resources.len())
+        .map(|element| {
+            element
+                .removed_resources
+                .as_ref()
+                .map_or(0, |resources| resources.len())
+        })
         .sum::<usize>();
 
     tracing::info!(
+        routing_key = delivery.routing_key.as_str(),
         reports = reports.len(),
         changed_resource_count,
         removed_resource_count,
@@ -187,9 +236,9 @@ async fn handle_message(
 
         for resource in element.changed_resources {
             tracing::debug!(id = resource.fdk_id.as_str(), "processing changed dataset");
-            if let Some(graph) = get_graph(&client, &resource.fdk_id).await? {
+            if let Some(graph) = get_graph(&client, base_url, &resource.fdk_id).await? {
                 let message = DatasetEvent {
-                    event_type: schemas::DatasetEventType::DatasetHarvested,
+                    event_type,
                     fdk_id: resource.fdk_id,
                     graph,
                     timestamp,
@@ -197,30 +246,36 @@ async fn handle_message(
 
                 send_event(&mut encoder, &producer, message).await?;
             } else {
-                tracing::error!(id = resource.fdk_id, "graph not found in harvester");
+                tracing::error!(id = resource.fdk_id, "graph not found");
             }
         }
 
-        for resource in element.removed_resources {
-            tracing::debug!(id = resource.fdk_id.as_str(), "processing removed dataset");
-            let message = DatasetEvent {
-                event_type: schemas::DatasetEventType::DatasetRemoved,
-                fdk_id: resource.fdk_id,
-                // TODO: this should probably not be empty string
-                graph: "".to_string(),
-                timestamp,
-            };
+        if let Some(removed_resources) = element.removed_resources {
+            for resource in removed_resources {
+                tracing::debug!(id = resource.fdk_id.as_str(), "processing removed dataset");
+                let message = DatasetEvent {
+                    event_type: schemas::DatasetEventType::DatasetRemoved,
+                    fdk_id: resource.fdk_id,
+                    // TODO: this should probably not be empty string
+                    graph: "".to_string(),
+                    timestamp,
+                };
 
-            send_event(&mut encoder, &producer, message).await?;
+                send_event(&mut encoder, &producer, message).await?;
+            }
         }
     }
 
     Ok(())
 }
 
-async fn get_graph(client: &reqwest::Client, id: &String) -> Result<Option<String>, Error> {
+async fn get_graph(
+    client: &reqwest::Client,
+    base_url: &str,
+    id: &String,
+) -> Result<Option<String>, Error> {
     let response = client
-        .get(format!("{}/datasets/{}", HARVESTER_API_URL.clone(), id))
+        .get(format!("{}/datasets/{}", base_url, id))
         .send()
         .await?;
 

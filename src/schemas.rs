@@ -6,10 +6,12 @@ use serde_derive::Serialize;
 
 use crate::kafka::KafkaError;
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub enum DatasetEventType {
     #[serde(rename = "DATASET_HARVESTED")]
     DatasetHarvested,
+    #[serde(rename = "DATASET_REASONED")]
+    DatasetReasoned,
     #[serde(rename = "DATASET_REMOVED")]
     DatasetRemoved,
 }
@@ -38,7 +40,7 @@ pub async fn setup_schemas(sr_settings: &SrSettings) -> Result<(), KafkaError> {
                     "type": {
                         "type": "enum",
                         "name": "DatasetEventType",
-                        "symbols": ["DATASET_HARVESTED", "DATASET_REMOVED"]
+                        "symbols": ["DATASET_HARVESTED", "DATASET_REASONED", "DATASET_REMOVED"]
                     }
                 },
                 {"name": "fdkId", "type": "string"},
