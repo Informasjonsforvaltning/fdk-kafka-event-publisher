@@ -216,6 +216,7 @@ async fn handle_dataset_message(
         .map(|element| {
             element
                 .removed_resources
+                .as_ref()
                 .map_or(0, |resources| resources.len())
         })
         .sum::<usize>();
