@@ -32,6 +32,14 @@ lazy_static! {
         env::var("HARVESTER_API_URL").unwrap_or("http://localhost:8080".to_string());
     pub static ref REASONING_API_URL: String =
         env::var("REASONING_API_URL").unwrap_or("http://localhost:8081".to_string());
+    pub static ref CONSUMER_NAME: String =
+        env::var("CONSUMER_NAME").unwrap_or("fdk-dataset-event-publisher".to_string());
+    pub static ref ROUTING_KEYS: Vec<String> = env::var("ROUTING_KEY")
+        .map(|s| s.split(",").map(|s| s.to_string()).collect())
+        .unwrap_or(vec![
+            "datasets.harvested".to_string(),
+            "datasets.reasoned".to_string()
+        ]);
     pub static ref PRODUCER: FutureProducer = kafka::create_producer().unwrap_or_else(|e| {
         tracing::error!(error = e.to_string(), "kafka producer creation error");
         std::process::exit(1);
@@ -84,6 +92,8 @@ async fn main() {
         schema_registry = SCHEMA_REGISTRY.to_string(),
         output_topic = OUTPUT_TOPIC.to_string(),
         harvester_api_url = HARVESTER_API_URL.to_string(),
+        consumer_name = CONSUMER_NAME.to_string(),
+        routing_keys = format!("{:?}", ROUTING_KEYS.clone()),
         "starting service"
     );
 
@@ -96,14 +106,18 @@ async fn main() {
         tracing::error!(error = e.to_string(), "rabbit connection error");
         std::process::exit(1);
     });
-    rabbit::setup(&channel).await.unwrap_or_else(|e| {
-        tracing::error!(error = e.to_string(), "rabbit setup error");
-        std::process::exit(1);
-    });
-    let consumer = rabbit::create_consumer(&channel).await.unwrap_or_else(|e| {
-        tracing::error!(error = e.to_string(), "rabbit consumer creation error");
-        std::process::exit(1);
-    });
+    rabbit::setup(&channel, &CONSUMER_NAME, &ROUTING_KEYS)
+        .await
+        .unwrap_or_else(|e| {
+            tracing::error!(error = e.to_string(), "rabbit setup error");
+            std::process::exit(1);
+        });
+    let consumer = rabbit::create_consumer(&channel, &CONSUMER_NAME)
+        .await
+        .unwrap_or_else(|e| {
+            tracing::error!(error = e.to_string(), "rabbit consumer creation error");
+            std::process::exit(1);
+        });
 
     consumer.set_delegate(move |delivery: DeliveryResult| async {
         let delivery = match delivery {
@@ -118,10 +132,11 @@ async fn main() {
         let start_time = Instant::now();
         let result = handle_message(&PRODUCER, &CLIENT, SR_SETTINGS.clone(), &delivery).await;
         let elapsed_millis = start_time.elapsed().as_millis();
-        match result {
+
+        let metric_status_label = match result {
             Ok(_) => {
                 tracing::info!(elapsed_millis, "message handled successfully");
-                PROCESSED_MESSAGES.with_label_values(&["success"]).inc();
+                "success"
             }
             Err(e) => {
                 tracing::error!(
@@ -129,9 +144,12 @@ async fn main() {
                     error = e.to_string(),
                     "failed while handling message"
                 );
-                PROCESSED_MESSAGES.with_label_values(&["error"]).inc();
+                "error"
             }
         };
+        PROCESSED_MESSAGES
+            .with_label_values(&[metric_status_label])
+            .inc();
         PROCESSING_TIME.observe(elapsed_millis as f64 / 1000.0);
 
         delivery

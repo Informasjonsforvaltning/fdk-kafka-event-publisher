@@ -53,43 +53,42 @@ pub async fn connect() -> Result<Channel, RabbitError> {
     Ok(channel)
 }
 
-pub async fn setup(channel: &Channel) -> Result<(), RabbitError> {
+pub async fn setup(
+    channel: &Channel,
+    consumer_name: &str,
+    routing_keys: &Vec<String>,
+) -> Result<(), RabbitError> {
     channel
         .queue_declare(
-            "fdk-dataset-event-publisher",
+            consumer_name,
             QueueDeclareOptions::default(),
             FieldTable::default(),
         )
         .await?;
 
-    channel
-        .queue_bind(
-            "fdk-dataset-event-publisher",
-            "harvests",
-            "datasets.harvested",
-            QueueBindOptions::default(),
-            FieldTable::default(),
-        )
-        .await?;
-
-    channel
-        .queue_bind(
-            "fdk-dataset-event-publisher",
-            "harvests",
-            "datasets.reasoned",
-            QueueBindOptions::default(),
-            FieldTable::default(),
-        )
-        .await?;
+    for routing_key in routing_keys {
+        channel
+            .queue_bind(
+                consumer_name,
+                "harvests",
+                routing_key,
+                QueueBindOptions::default(),
+                FieldTable::default(),
+            )
+            .await?;
+    }
 
     Ok(())
 }
 
-pub async fn create_consumer(channel: &Channel) -> Result<Consumer, RabbitError> {
+pub async fn create_consumer(
+    channel: &Channel,
+    consumer_name: &str,
+) -> Result<Consumer, RabbitError> {
     let consumer = channel
         .basic_consume(
-            "fdk-dataset-event-publisher",
-            "fdk-dataset-event-publisher",
+            consumer_name,
+            consumer_name,
             BasicConsumeOptions::default(),
             FieldTable::default(),
         )
