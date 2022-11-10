@@ -1,4 +1,4 @@
-use std::{env, time::Instant};
+use std::{env, str::FromStr, time::Instant};
 
 use actix_web::{get, App, HttpServer, Responder};
 use chrono::DateTime;
@@ -13,7 +13,7 @@ use rabbit::HarvestReport;
 use rdkafka::producer::FutureProducer;
 use reqwest::StatusCode;
 use schema_registry_converter::async_impl::{avro::AvroEncoder, schema_registry::SrSettings};
-use schemas::setup_schemas;
+use schemas::{setup_schemas, DatasetEventType};
 
 use crate::{
     kafka::{send_event, BROKERS, OUTPUT_TOPIC, SCHEMA_REGISTRY},
@@ -183,48 +183,9 @@ async fn handle_message(
     sr_settings: SrSettings,
     delivery: &Delivery,
 ) -> Result<(), Error> {
-    match delivery.routing_key.as_str() {
-        "datasets.harvested" => {
-            handle_dataset_message(
-                producer,
-                client,
-                sr_settings,
-                delivery,
-                HARVESTER_API_URL.as_str(),
-                schemas::DatasetEventType::DatasetHarvested,
-            )
-            .await
-        }
-        "datasets.reasoned" => {
-            handle_dataset_message(
-                producer,
-                client,
-                sr_settings,
-                delivery,
-                REASONING_API_URL.as_str(),
-                schemas::DatasetEventType::DatasetReasoned,
-            )
-            .await
-        }
-        _ => {
-            tracing::error!(
-                routing_key = delivery.routing_key.as_str(),
-                "unknown event received"
-            );
-            Ok(())
-        }
-    }
-}
-
-async fn handle_dataset_message(
-    producer: &FutureProducer,
-    client: &reqwest::Client,
-    sr_settings: SrSettings,
-    delivery: &Delivery,
-    base_url: &str,
-    event_type: schemas::DatasetEventType,
-) -> Result<(), Error> {
+    let event_type = DatasetEventType::from_str(delivery.routing_key.as_str())?;
     let reports: Vec<HarvestReport> = serde_json::from_slice(&delivery.data)?;
+
     let changed_resource_count = reports
         .iter()
         .map(|element| element.changed_resources.len())
@@ -254,7 +215,7 @@ async fn handle_dataset_message(
 
         for resource in element.changed_resources {
             tracing::debug!(id = resource.fdk_id.as_str(), "processing changed dataset");
-            if let Some(graph) = get_graph(&client, base_url, &resource.fdk_id).await? {
+            if let Some(graph) = get_graph(&client, &resource.fdk_id).await? {
                 let message = DatasetEvent {
                     event_type,
                     fdk_id: resource.fdk_id,
@@ -287,13 +248,9 @@ async fn handle_dataset_message(
     Ok(())
 }
 
-async fn get_graph(
-    client: &reqwest::Client,
-    base_url: &str,
-    id: &String,
-) -> Result<Option<String>, Error> {
+async fn get_graph(client: &reqwest::Client, id: &String) -> Result<Option<String>, Error> {
     let response = client
-        .get(format!("{}/datasets/{}", base_url, id))
+        .get(format!("{}/datasets/{}", REASONING_API_URL.as_str(), id))
         .send()
         .await?;
 

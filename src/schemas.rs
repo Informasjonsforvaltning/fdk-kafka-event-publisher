@@ -1,10 +1,12 @@
+use std::str::FromStr;
+
 use schema_registry_converter::{
     async_impl::schema_registry::{post_schema, SrSettings},
     schema_registry_common::{SchemaType, SuppliedSchema},
 };
 use serde_derive::Serialize;
 
-use crate::kafka::KafkaError;
+use crate::{error::Error, kafka::KafkaError};
 
 #[derive(Clone, Copy, Debug, Serialize)]
 pub enum DatasetEventType {
@@ -14,6 +16,21 @@ pub enum DatasetEventType {
     DatasetReasoned,
     #[serde(rename = "DATASET_REMOVED")]
     DatasetRemoved,
+}
+
+impl FromStr for DatasetEventType {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "datasets.harvested" => Ok(Self::DatasetHarvested),
+            "datasets.reasoned" => Ok(Self::DatasetReasoned),
+            _ => Err(Self::Err::String(format!(
+                "unknown event (routing key) received: '{}'",
+                s
+            ))),
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
