@@ -9,15 +9,14 @@ use schema_registry_converter::{
     async_impl::{avro::AvroEncoder, schema_registry::SrSettings},
     schema_registry_common::SubjectNameStrategy,
 };
+use serde::Serialize;
 
-use crate::schemas::DatasetEvent;
+use crate::EventConfig;
 
 lazy_static! {
     pub static ref BROKERS: String = env::var("BROKERS").unwrap_or("localhost:9092".to_string());
     pub static ref SCHEMA_REGISTRY: String =
         env::var("SCHEMA_REGISTRY").unwrap_or("http://localhost:8081".to_string());
-    pub static ref OUTPUT_TOPIC: String =
-        env::var("OUTPUT_TOPIC").unwrap_or("dataset-events".to_string());
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -26,6 +25,36 @@ pub enum KafkaError {
     SRCError(#[from] schema_registry_converter::error::SRCError),
     #[error(transparent)]
     RdkafkaError(#[from] rdkafka::error::KafkaError),
+}
+
+pub trait Event: Serialize {
+    fn key(&self) -> String;
+}
+
+pub async fn send_event<E: Event>(
+    encoder: &mut AvroEncoder<'_>,
+    producer: &FutureProducer,
+    event_config: &EventConfig,
+    event: E,
+) -> Result<(), KafkaError> {
+    let key = event.key();
+
+    let encoded = encoder
+        .encode_struct(
+            event,
+            &SubjectNameStrategy::RecordNameStrategy(event_config.name.to_string()),
+        )
+        .await?;
+
+    let record = FutureRecord::to(&event_config.topic)
+        .key(&key)
+        .payload(&encoded);
+    producer
+        .send(record, Duration::from_secs(0))
+        .await
+        .map_err(|e| e.0)?;
+
+    Ok(())
 }
 
 pub fn create_sr_settings() -> Result<SrSettings, KafkaError> {
@@ -49,27 +78,4 @@ pub fn create_producer() -> Result<FutureProducer, KafkaError> {
         .set("message.timeout.ms", "5000")
         .create()?;
     Ok(producer)
-}
-
-pub async fn send_event(
-    encoder: &mut AvroEncoder<'_>,
-    producer: &FutureProducer,
-    event: DatasetEvent,
-) -> Result<(), KafkaError> {
-    let key = event.fdk_id.clone();
-    let encoded = encoder
-        .encode_struct(
-            event,
-            &SubjectNameStrategy::RecordNameStrategy("no.fdk.dataset.DatasetEvent".to_string()),
-        )
-        .await?;
-
-    let record: FutureRecord<String, Vec<u8>> =
-        FutureRecord::to(&OUTPUT_TOPIC).key(&key).payload(&encoded);
-    producer
-        .send(record, Duration::from_secs(0))
-        .await
-        .map_err(|e| e.0)?;
-
-    Ok(())
 }
