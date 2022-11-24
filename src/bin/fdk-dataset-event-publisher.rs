@@ -10,8 +10,10 @@ use fdk_event_publisher::{
 };
 
 lazy_static! {
+    static ref HARVEST_API_URL: String =
+        env::var("HARVEST_API_URL").unwrap_or("http://localhost:8081".to_string());
     static ref REASONING_API_URL: String =
-        env::var("REASONING_API_URL").unwrap_or("http://localhost:8081".to_string());
+        env::var("REASONING_API_URL").unwrap_or("http://localhost:8082".to_string());
     static ref CONSUMER_NAME: String =
         env::var("CONSUMER_NAME").unwrap_or("fdk-dataset-event-publisher".to_string());
     static ref OUTPUT_TOPIC: String =
@@ -74,22 +76,26 @@ impl Resource for Dataset {
         timestamp: i64,
         report_change: ChangeType,
     ) -> Result<Option<Self::Event>, Error> {
-        let (event_type, graph) = match report_change {
-            ChangeType::CreateOrUpdate => (
-                DatasetEventType::from_str(routing_key),
-                http_get(format!("{}/datasets/{}", REASONING_API_URL.as_str(), id)).await,
-            ),
-            ChangeType::Remove => (
-                Ok(DatasetEventType::DatasetRemoved),
-                // Do not bother fetching graph for remove events
-                Ok("".to_string()),
-            ),
-        };
+        let event_type = match report_change {
+            ChangeType::CreateOrUpdate => DatasetEventType::from_routing_key(routing_key),
+            ChangeType::Remove => Ok(DatasetEventType::DatasetRemoved),
+        }?;
+
+        let graph = match event_type {
+            DatasetEventType::DatasetHarvested => {
+                http_get(format!("{}/datasets/{}", HARVEST_API_URL.as_str(), id)).await
+            }
+            DatasetEventType::DatasetReasoned => {
+                http_get(format!("{}/datasets/{}", REASONING_API_URL.as_str(), id)).await
+            }
+            // Do not bother fetching graph for remove events
+            DatasetEventType::DatasetRemoved => Ok("".to_string()),
+        }?;
 
         Ok(Some(Self::Event {
-            event_type: event_type?,
+            event_type,
             fdk_id: id,
-            graph: graph?,
+            graph,
             timestamp,
         }))
     }
@@ -121,15 +127,13 @@ pub enum DatasetEventType {
     DatasetRemoved,
 }
 
-impl FromStr for DatasetEventType {
-    type Err = Error;
-
-    fn from_str(routing_key: &str) -> Result<Self, Self::Err> {
+impl DatasetEventType {
+    fn from_routing_key(routing_key: &str) -> Result<Self, Error> {
         match routing_key {
             "datasets.harvested" => Ok(Self::DatasetHarvested),
             "datasets.reasoned" => Ok(Self::DatasetReasoned),
-            _ => Err(Self::Err::String(format!(
-                "unknown routing key received: '{}'",
+            _ => Err(Error::String(format!(
+                "unknown routing key: '{}'",
                 routing_key
             ))),
         }
