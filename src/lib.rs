@@ -72,13 +72,6 @@ pub async fn run_event_publisher<R: Resource + 'static>(
     resource_config: ResourceConfig,
     event_config: EventConfig,
 ) {
-    tracing_subscriber::fmt()
-        .json()
-        .with_max_level(tracing::Level::INFO)
-        .with_target(false)
-        .with_current_span(false)
-        .init();
-
     tracing::info!(
         brokers = BROKERS.to_string(),
         schema_registry = SCHEMA_REGISTRY.to_string(),
@@ -187,6 +180,12 @@ async fn handle_message<R: Resource>(
                 .map_or(0, |resources| resources.len())
         })
         .sum::<usize>();
+
+    tracing::debug!(
+        routing_key = delivery.routing_key.as_str(),
+        reports = format!("{:?}", reports),
+        "processing event"
+    );
 
     tracing::info!(
         routing_key = delivery.routing_key.as_str(),

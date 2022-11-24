@@ -13,7 +13,7 @@ pub enum RabbitError {
     ConfigError(&'static str, String),
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct HarvestReport {
     #[serde(alias = "startTime")]
     pub start_time: String,
@@ -23,7 +23,7 @@ pub struct HarvestReport {
     pub removed_resources: Option<Vec<HarvestReportChange>>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct HarvestReportChange {
     #[serde(alias = "fdkId")]
     pub fdk_id: String,

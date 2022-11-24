@@ -51,6 +51,14 @@ async fn main() {
             }"#
         .to_string(),
     };
+
+    tracing_subscriber::fmt()
+        .json()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .with_current_span(false)
+        .init();
+
     run_event_publisher::<Dataset>(resource_config, event_config).await
 }
 
