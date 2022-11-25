@@ -10,7 +10,7 @@ use lapin::{
 };
 use lazy_static::lazy_static;
 use rabbit::HarvestReport;
-use rdkafka::producer::FutureProducer;
+use rdkafka::producer::{FutureProducer, Producer};
 use schema_registry_converter::async_impl::{avro::AvroEncoder, schema_registry::SrSettings};
 
 use crate::{
@@ -63,6 +63,7 @@ pub trait Resource {
     ) -> Result<Option<Self::Event>, Error>;
 }
 
+#[derive(Debug)]
 pub enum ChangeType {
     CreateOrUpdate,
     Remove,
@@ -201,37 +202,70 @@ async fn handle_message<R: Resource>(
             .timestamp_millis();
 
         for resource in element.changed_resources {
-            tracing::debug!(id = resource.fdk_id.as_str(), "processing changed resource");
-
-            if let Some(event) = R::event(
+            if let Err(e) = handle_event::<R>(
+                &mut encoder,
+                &producer,
+                &event_config,
                 delivery.routing_key.as_str(),
-                resource.fdk_id,
+                resource.fdk_id.clone(),
                 timestamp,
                 ChangeType::CreateOrUpdate,
             )
-            .await?
+            .await
             {
-                send_event(&mut encoder, &producer, &event_config, event).await?;
-            };
+                tracing::error!(
+                    id = resource.fdk_id,
+                    change = format!("{:?}", ChangeType::CreateOrUpdate),
+                    error = e.to_string(),
+                    "failed while handling event"
+                );
+            }
         }
 
         if let Some(removed_resources) = element.removed_resources {
             for resource in removed_resources {
-                tracing::debug!(id = resource.fdk_id.as_str(), "processing removed resource");
-
-                if let Some(event) = R::event(
+                if let Err(e) = handle_event::<R>(
+                    &mut encoder,
+                    &producer,
+                    &event_config,
                     delivery.routing_key.as_str(),
-                    resource.fdk_id,
+                    resource.fdk_id.clone(),
                     timestamp,
                     ChangeType::Remove,
                 )
-                .await?
+                .await
                 {
-                    send_event(&mut encoder, &producer, &event_config, event).await?;
+                    tracing::error!(
+                        id = resource.fdk_id,
+                        change = format!("{:?}", ChangeType::Remove),
+                        error = e.to_string(),
+                        "failed while handling event"
+                    );
                 }
             }
         }
     }
 
+    Ok(())
+}
+
+async fn handle_event<R: Resource>(
+    mut encoder: &mut AvroEncoder<'_>,
+    producer: &FutureProducer,
+    event_config: &EventConfig,
+    routing_key: &str,
+    id: String,
+    timestamp: i64,
+    change: ChangeType,
+) -> Result<(), Error> {
+    tracing::debug!(
+        id = id.as_str(),
+        change = format!("{:?}", change),
+        "processing event"
+    );
+
+    if let Some(event) = R::event(routing_key, id, timestamp, change).await? {
+        send_event(&mut encoder, &producer, &event_config, event).await?;
+    };
     Ok(())
 }
