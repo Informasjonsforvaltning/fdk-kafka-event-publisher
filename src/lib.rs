@@ -259,6 +259,7 @@ async fn handle_event<R: Resource>(
     change: ChangeType,
 ) -> Result<(), Error> {
     tracing::debug!(
+        routing_key,
         id = id.as_str(),
         change = format!("{:?}", change),
         "processing event"
