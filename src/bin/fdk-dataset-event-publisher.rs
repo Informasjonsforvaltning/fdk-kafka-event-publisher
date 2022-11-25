@@ -1,4 +1,4 @@
-use std::{env, str::FromStr};
+use std::env;
 
 use async_trait::async_trait;
 use lazy_static::lazy_static;
@@ -10,8 +10,8 @@ use fdk_event_publisher::{
 };
 
 lazy_static! {
-    static ref HARVEST_API_URL: String =
-        env::var("HARVEST_API_URL").unwrap_or("http://localhost:8081".to_string());
+    static ref HARVESTER_API_URL: String =
+        env::var("HARVESTER_API_URL").unwrap_or("http://localhost:8081".to_string());
     static ref REASONING_API_URL: String =
         env::var("REASONING_API_URL").unwrap_or("http://localhost:8082".to_string());
     static ref CONSUMER_NAME: String =
@@ -83,7 +83,7 @@ impl Resource for Dataset {
 
         let graph = match event_type {
             DatasetEventType::DatasetHarvested => {
-                http_get(format!("{}/datasets/{}", HARVEST_API_URL.as_str(), id)).await
+                http_get(format!("{}/datasets/{}", HARVESTER_API_URL.as_str(), id)).await
             }
             DatasetEventType::DatasetReasoned => {
                 http_get(format!("{}/datasets/{}", REASONING_API_URL.as_str(), id)).await
