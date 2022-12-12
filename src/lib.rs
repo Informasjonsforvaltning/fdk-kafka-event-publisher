@@ -10,7 +10,7 @@ use lapin::{
 };
 use lazy_static::lazy_static;
 use rabbit::HarvestReport;
-use rdkafka::producer::{FutureProducer, Producer};
+use rdkafka::producer::FutureProducer;
 use schema_registry_converter::async_impl::{avro::AvroEncoder, schema_registry::SrSettings};
 
 use crate::{
