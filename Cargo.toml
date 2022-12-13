@@ -1,10 +1,11 @@
 [package]
-name = "fdk-dataset-event-publisher"
+name = "fdk-event-publisher"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 actix-web = "4.1.0"
+async-trait = "0.1.58"
 avro-rs = "0.13.0"
 chrono = "0.4.19"
 lapin = "2.1.1"
