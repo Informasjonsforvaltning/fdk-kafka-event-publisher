@@ -1,1 +1,1 @@
-# fdk-dataset-event-publisher
+# fdk-kafka-event-publisher

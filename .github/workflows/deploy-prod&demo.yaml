@@ -13,22 +13,25 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build:
-    name: Build with reusable workflow when merging to main
+  build-dataset:
+    name: Build dataset-event-publisher when pull request is created
     uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
     with:
       app_name: fdk-dataset-event-publisher
       environment: prod
+      build_env: true
+      build_env_name: BINARY
+      build_env_value: fdk-dataset-event-publisher
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
 
   deploy:
-    name: Deploy to prod environment with reusable workflow when test and build is successful
-    needs: [test, build]
-    uses: Informasjonsforvaltning/workflows/.github/workflows/deploy.yaml@main
+    name: Deploy publishers to prod environment with reusable workflow
+    needs: [test, build-dataset]
+    uses: Informasjonsforvaltning/workflows/.github/workflows/kustomize-deploy.yaml@main
     with:
-      app_name: fdk-dataset-event-publisher
+      app_name: fdk-kafka-event-publisher
       environment: prod
       cluster: digdir-fdk-prod
     secrets:
@@ -37,11 +40,11 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   deploy_demo:
-    name: Deploy to demo environment with reusable workflow when prod deploy is successful
+    name: Deploy publishers to demo environment with reusable workflow
     needs: [deploy]
-    uses: Informasjonsforvaltning/workflows/.github/workflows/deploy.yaml@main
+    uses: Informasjonsforvaltning/workflows/.github/workflows/kustomize-deploy.yaml@main
     with:
-      app_name: fdk-dataset-event-publisher
+      app_name: fdk-kafka-event-publisher
       environment: demo
       cluster: digdir-fdk-dev
     secrets:
