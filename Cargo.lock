@@ -777,7 +777,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fdk-event-publisher"
+name = "fdk-kafka-event-publisher"
 version = "0.1.0"
 dependencies = [
  "actix-web",

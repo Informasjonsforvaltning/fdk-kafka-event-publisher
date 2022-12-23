@@ -14,24 +14,27 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build:
-    name: Build with reusable workflow when pull request is created
+  build-dataset:
+    name: Build dataset-event-publisher when pull request is created
     if: github.event.pull_request.draft == false
     uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
     with:
       app_name: fdk-dataset-event-publisher
       environment: staging
+      build_env: true
+      build_env_name: BINARY
+      build_env_value: fdk-dataset-event-publisher
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
 
   deploy:
-    name: Deploy to staging environment with reusable workflow when test and build is successful
+    name: Deploy publishers to staging environment with reusable workflow
     if: github.event.pull_request.draft == false
-    needs: [test, build]
-    uses: Informasjonsforvaltning/workflows/.github/workflows/deploy.yaml@main
+    needs: [test, build-dataset]
+    uses: Informasjonsforvaltning/workflows/.github/workflows/kustomize-deploy.yaml@main
     with:
-      app_name: fdk-dataset-event-publisher
+      app_name: fdk-kafka-event-publisher
       environment: staging
       cluster: digdir-fdk-dev
     secrets:

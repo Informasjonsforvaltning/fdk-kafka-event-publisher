@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use lazy_static::lazy_static;
 use serde_derive::Serialize;
 
-use fdk_event_publisher::{
+use fdk_kafka_event_publisher::{
     error::Error, kafka, run_event_publisher, utils::http_get, ChangeType, EventConfig, Resource,
     ResourceConfig,
 };
