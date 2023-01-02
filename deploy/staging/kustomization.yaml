@@ -4,4 +4,5 @@ kind: Kustomization
 namespace: staging
 resources:
   - deployment-fdk-dataset-event-publisher.yaml
+  - deployment-fdk-concept-event-publisher.yaml
   - ../base

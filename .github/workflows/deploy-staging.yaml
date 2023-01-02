@@ -28,10 +28,24 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
 
+  build-concept:
+    name: Build concept-event-publisher when pull request is created
+    if: github.event.pull_request.draft == false
+    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
+    with:
+      app_name: fdk-concept-event-publisher
+      environment: staging
+      build_env: true
+      build_env_name: BINARY
+      build_env_value: fdk-concept-event-publisher
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
+
   deploy:
     name: Deploy publishers to staging environment with reusable workflow
     if: github.event.pull_request.draft == false
-    needs: [test, build-dataset]
+    needs: [test, build-dataset, build-concept]
     uses: Informasjonsforvaltning/workflows/.github/workflows/kustomize-deploy.yaml@main
     with:
       app_name: fdk-kafka-event-publisher
