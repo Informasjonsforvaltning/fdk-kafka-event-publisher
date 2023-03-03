@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fdk-data-service-event-publisher
+spec:
+  selector:
+    fdk.service: fdk-data-service-event-publisher
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8081
+  type: NodePort

@@ -4,5 +4,6 @@ kind: Kustomization
 namespace: demo
 resources:
   - deployment-fdk-dataset-event-publisher.yaml
+  - deployment-fdk-data-service-event-publisher.yaml
   - deployment-fdk-concept-event-publisher.yaml
   - ../base
