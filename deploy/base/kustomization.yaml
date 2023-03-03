@@ -3,6 +3,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - service-fdk-dataset-event-publisher.yaml
+  - service-fdk-data-service-event-publisher.yaml
   - service-fdk-concept-event-publisher.yaml
 images:
   - name: fdk-dataset-event-publisher
