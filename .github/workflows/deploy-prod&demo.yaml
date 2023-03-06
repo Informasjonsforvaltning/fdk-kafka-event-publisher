@@ -26,6 +26,19 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
 
+  build-data-service:
+    name: Build data-service-event-publisher when pull request is created
+    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
+    with:
+      app_name: fdk-data-service-event-publisher
+      environment: prod
+      build_env: true
+      build_env_name: BINARY
+      build_env_value: fdk-data-service-event-publisher
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
+
   build-concept:
     name: Build concept-event-publisher when pull request is created
     uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
