@@ -2363,9 +2363,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-executor-trait"
-version = "2.1.0"
+version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b78630814cbcdf383c949bd8f17c3cfe3142e93b0d5801bdcae4b2a5275db7e"
+checksum = "802ccf58e108fe16561f35348fabe15ff38218968f033d587e399a84937533cc"
 dependencies = [
  "async-trait",
  "executor-trait",
