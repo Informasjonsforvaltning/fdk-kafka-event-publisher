@@ -16,6 +16,7 @@ jobs:
   build:
     name: Build event-publishers when merged to main
     uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
+    needs: [test]
     strategy:
       matrix:
         app_name: [fdk-dataset-event-publisher, fdk-data-service-event-publisher, fdk-concept-event-publisher]
