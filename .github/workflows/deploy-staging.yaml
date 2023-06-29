@@ -14,52 +14,28 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build-dataset:
-    name: Build dataset-event-publisher when pull request is created
-    if: github.event.pull_request.draft == false
+  build:
+    name: Build event-publishers when pull request is created
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.draft == false }}
+    needs: [test]
+    strategy:
+      matrix:
+        app_name: [fdk-dataset-event-publisher, fdk-data-service-event-publisher, fdk-concept-event-publisher]
     uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
     with:
-      app_name: fdk-dataset-event-publisher
+      app_name: ${{ matrix.app_name }}
       environment: staging
       build_env: true
       build_env_name: BINARY
-      build_env_value: fdk-dataset-event-publisher
-    secrets:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
-
-  build-data-service:
-    name: Build data-service-event-publisher when pull request is created
-    if: github.event.pull_request.draft == false
-    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
-    with:
-      app_name: fdk-data-service-event-publisher
-      environment: staging
-      build_env: true
-      build_env_name: BINARY
-      build_env_value: fdk-data-service-event-publisher
-    secrets:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
-
-  build-concept:
-    name: Build concept-event-publisher when pull request is created
-    if: github.event.pull_request.draft == false
-    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
-    with:
-      app_name: fdk-concept-event-publisher
-      environment: staging
-      build_env: true
-      build_env_name: BINARY
-      build_env_value: fdk-concept-event-publisher
+      build_env_value: ${{ matrix.app_name }}
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
 
   deploy:
-    name: Deploy publishers to staging environment with reusable workflow
+    name: Deploy publishers to staging environment
     if: github.event.pull_request.draft == false
-    needs: [test, build-dataset, build-concept]
+    needs: [test, build]
     uses: Informasjonsforvaltning/workflows/.github/workflows/kustomize-deploy.yaml@main
     with:
       app_name: fdk-kafka-event-publisher

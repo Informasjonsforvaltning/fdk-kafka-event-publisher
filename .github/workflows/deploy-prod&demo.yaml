@@ -13,48 +13,26 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build-dataset:
-    name: Build dataset-event-publisher when pull request is created
+  build:
+    name: Build event-publishers when merged to main
     uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
+    needs: [test]
+    strategy:
+      matrix:
+        app_name: [fdk-dataset-event-publisher, fdk-data-service-event-publisher, fdk-concept-event-publisher]
     with:
-      app_name: fdk-dataset-event-publisher
+      app_name: ${{ matrix.app_name }}
       environment: prod
       build_env: true
       build_env_name: BINARY
-      build_env_value: fdk-dataset-event-publisher
-    secrets:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
-
-  build-data-service:
-    name: Build data-service-event-publisher when pull request is created
-    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
-    with:
-      app_name: fdk-data-service-event-publisher
-      environment: prod
-      build_env: true
-      build_env_name: BINARY
-      build_env_value: fdk-data-service-event-publisher
-    secrets:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
-
-  build-concept:
-    name: Build concept-event-publisher when pull request is created
-    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
-    with:
-      app_name: fdk-concept-event-publisher
-      environment: prod
-      build_env: true
-      build_env_name: BINARY
-      build_env_value: fdk-concept-event-publisher
+      build_env_value: ${{ matrix.app_name }}
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
 
   deploy:
-    name: Deploy publishers to prod environment with reusable workflow
-    needs: [test, build-dataset, build-concept]
+    name: Deploy publishers to prod environment
+    needs: [test, build]
     uses: Informasjonsforvaltning/workflows/.github/workflows/kustomize-deploy.yaml@main
     with:
       app_name: fdk-kafka-event-publisher
@@ -66,7 +44,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   deploy_demo:
-    name: Deploy publishers to demo environment with reusable workflow
+    name: Deploy publishers to demo environment
     needs: [deploy]
     uses: Informasjonsforvaltning/workflows/.github/workflows/kustomize-deploy.yaml@main
     with:
