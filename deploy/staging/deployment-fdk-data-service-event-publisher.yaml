@@ -62,7 +62,7 @@ spec:
                 name: commonurl-staging
                 key: FDK_REASONING_SERVICE_URI
           name: fdk-data-service-event-publisher
-          image: eu.gcr.io/digdir-fdk-infra/fdk-data-service-event-publisher:$(GIT_COMMIT_SHA)
+          image: fdk-data-service-event-publisher
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

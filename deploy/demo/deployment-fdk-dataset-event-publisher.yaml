@@ -62,7 +62,7 @@ spec:
                 name: commonurl-demo
                 key: FDK_REASONING_SERVICE_URI
           name: fdk-dataset-event-publisher
-          image: eu.gcr.io/digdir-fdk-infra/fdk-dataset-event-publisher:$(GIT_COMMIT_SHA)
+          image: fdk-dataset-event-publisher
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

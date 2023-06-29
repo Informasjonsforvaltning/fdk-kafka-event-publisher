@@ -62,7 +62,7 @@ spec:
                 name: commonurl-prod
                 key: FDK_REASONING_SERVICE_URI
           name: fdk-concept-event-publisher
-          image: eu.gcr.io/digdir-fdk-infra/fdk-concept-event-publisher:$(GIT_COMMIT_SHA)
+          image: fdk-concept-event-publisher
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
