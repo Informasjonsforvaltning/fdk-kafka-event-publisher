@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4.1.0"
-async-trait = "0.1.68"
+async-trait = "0.1.73"
 chrono = "0.4.24"
 lapin = "2.1.1"
 lazy_static = "1.4.0"
