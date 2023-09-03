@@ -16,7 +16,7 @@ schema_registry_converter = { version = "3.1.0", features = ["avro"] }
 serde = { version = "1.0.160", features = ["derive"] }
 serde_derive = "1.0.137"
 serde_json = "1.0.94"
-thiserror = "1.0.40"
+thiserror = "1.0.48"
 tokio = { version = "1.25.0", features = ["full"] }
 tokio-executor-trait = "2.1.1"
 tokio-reactor-trait = "1.1.0"
