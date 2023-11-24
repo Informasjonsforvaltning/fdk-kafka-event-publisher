@@ -6,6 +6,7 @@ resources:
   - deployment-fdk-dataset-event-publisher.yaml
   - deployment-fdk-data-service-event-publisher.yaml
   - deployment-fdk-concept-event-publisher.yaml
+  - deployment-fdk-information-model-event-publisher.yaml
   - ../base
 images:
   - name: fdk-dataset-event-publisher
@@ -16,4 +17,7 @@ images:
     newTag: $(GIT_COMMIT_SHA)
   - name: fdk-concept-event-publisher
     newName: eu.gcr.io/digdir-fdk-infra/fdk-concept-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
+  - name: fdk-information-model-event-publisher
+    newName: eu.gcr.io/digdir-fdk-infra/fdk-information-model-event-publisher
     newTag: $(GIT_COMMIT_SHA)

@@ -5,3 +5,4 @@ resources:
   - service-fdk-dataset-event-publisher.yaml
   - service-fdk-data-service-event-publisher.yaml
   - service-fdk-concept-event-publisher.yaml
+  - service-fdk-information-model-event-publisher.yaml
