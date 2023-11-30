@@ -20,7 +20,7 @@ jobs:
     needs: [test]
     strategy:
       matrix:
-        app_name: [fdk-dataset-event-publisher, fdk-data-service-event-publisher, fdk-concept-event-publisher, fdk-information-model-event-publisher]
+        app_name: [fdk-dataset-event-publisher, fdk-data-service-event-publisher, fdk-concept-event-publisher, fdk-information-model-event-publisher, fdk-event-event-publisher]
     uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
     with:
       app_name: ${{ matrix.app_name }}
