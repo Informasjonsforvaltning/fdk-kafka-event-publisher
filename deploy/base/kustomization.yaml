@@ -7,3 +7,4 @@ resources:
   - service-fdk-concept-event-publisher.yaml
   - service-fdk-event-event-publisher.yaml
   - service-fdk-information-model-event-publisher.yaml
+  - service-fdk-service-event-publisher.yaml
