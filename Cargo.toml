@@ -13,7 +13,7 @@ prometheus = "0.13.3"
 rdkafka = "0.36.0"
 reqwest = "0.11.22"
 schema_registry_converter = { version = "4.0.0", features = ["avro"] }
-serde = { version = "1.0.192", features = ["derive"] }
+serde = { version = "1.0.196", features = ["derive"] }
 serde_derive = "1.0.192"
 serde_json = "1.0.108"
 thiserror = "1.0.50"
