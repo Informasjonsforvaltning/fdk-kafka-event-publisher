@@ -35,7 +35,7 @@ async fn main() {
         topic: OUTPUT_TOPIC.clone(),
         schema: r#"{
                 "name": "InformationModelEvent",
-                "namespace": "no.fdk.informationmodels",
+                "namespace": "no.fdk.informationmodel",
                 "type": "record",
                 "fields": [
                     {
