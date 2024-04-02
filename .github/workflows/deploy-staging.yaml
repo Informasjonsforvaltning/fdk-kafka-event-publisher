@@ -13,6 +13,7 @@ jobs:
     uses: Informasjonsforvaltning/workflows/.github/workflows/test-rust.yaml@main
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     name: Build event-publishers when pull request is created
