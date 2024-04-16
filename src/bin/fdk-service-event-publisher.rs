@@ -83,7 +83,7 @@ impl Resource for Service {
 
         let graph = match event_type {
             ServiceEventType::ServiceHarvested => {
-                http_get(format!("{}/public-services/{}", HARVESTER_API_URL.as_str(), id)).await
+                http_get(format!("{}/public-services/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), id)).await
             }
             ServiceEventType::ServiceReasoned => {
                 http_get(format!("{}/public-services/{}", REASONING_API_URL.as_str(), id)).await

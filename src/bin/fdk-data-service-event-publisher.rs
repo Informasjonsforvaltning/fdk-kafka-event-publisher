@@ -83,7 +83,7 @@ impl Resource for DataService {
 
         let graph = match event_type {
             DataServiceEventType::DataServiceHarvested => {
-                http_get(format!("{}/dataservices/{}", HARVESTER_API_URL.as_str(), id)).await
+                http_get(format!("{}/dataservices/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), id)).await
             }
             DataServiceEventType::DataServiceReasoned => {
                 http_get(format!("{}/data-services/{}", REASONING_API_URL.as_str(), id)).await

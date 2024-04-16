@@ -83,7 +83,7 @@ impl Resource for EventResource {
 
         let graph = match event_type {
             EventEventType::EventHarvested => {
-                http_get(format!("{}/events/{}", HARVESTER_API_URL.as_str(), id)).await
+                http_get(format!("{}/events/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), id)).await
             }
             EventEventType::EventReasoned => {
                 http_get(format!("{}/events/{}", REASONING_API_URL.as_str(), id)).await
