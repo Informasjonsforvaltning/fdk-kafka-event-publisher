@@ -83,7 +83,7 @@ impl Resource for InformationModel {
 
         let graph = match event_type {
             InformationModelEventType::InformationModelHarvested => {
-                http_get(format!("{}/informationmodels/{}", HARVESTER_API_URL.as_str(), id)).await
+                http_get(format!("{}/informationmodels/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), id)).await
             }
             InformationModelEventType::InformationModelReasoned => {
                 http_get(format!("{}/information-models/{}", REASONING_API_URL.as_str(), id)).await

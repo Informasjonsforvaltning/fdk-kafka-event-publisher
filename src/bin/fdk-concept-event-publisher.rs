@@ -83,7 +83,7 @@ impl Resource for Concept {
 
         let graph = match event_type {
             ConceptEventType::ConceptHarvested => {
-                http_get(format!("{}/concepts/{}", HARVESTER_API_URL.as_str(), id)).await
+                http_get(format!("{}/concepts/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), id)).await
             }
             ConceptEventType::ConceptReasoned => {
                 http_get(format!("{}/concepts/{}", REASONING_API_URL.as_str(), id)).await

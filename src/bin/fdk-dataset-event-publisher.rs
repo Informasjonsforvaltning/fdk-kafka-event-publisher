@@ -83,7 +83,7 @@ impl Resource for Dataset {
 
         let graph = match event_type {
             DatasetEventType::DatasetHarvested => {
-                http_get(format!("{}/datasets/{}", HARVESTER_API_URL.as_str(), id)).await
+                http_get(format!("{}/datasets/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), id)).await
             }
             DatasetEventType::DatasetReasoned => {
                 http_get(format!("{}/datasets/{}", REASONING_API_URL.as_str(), id)).await
