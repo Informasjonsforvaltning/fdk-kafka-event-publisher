@@ -56,11 +56,6 @@ spec:
               secretKeyRef:
                 name: commonurl-demo
                 key: FDK_DATASERVICE_HARVESTER_URI
-          - name: REASONING_API_URL
-            valueFrom:
-              secretKeyRef:
-                name: commonurl-demo
-                key: FDK_REASONING_SERVICE_URI
           name: fdk-data-service-event-publisher
           image: fdk-data-service-event-publisher
           imagePullPolicy: Always
