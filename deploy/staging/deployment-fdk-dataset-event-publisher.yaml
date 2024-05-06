@@ -56,11 +56,6 @@ spec:
               secretKeyRef:
                 name: commonurl-staging
                 key: FDK_DATASET_HARVESTER_URI
-          - name: REASONING_API_URL
-            valueFrom:
-              secretKeyRef:
-                name: commonurl-staging
-                key: FDK_REASONING_SERVICE_URI
           name: fdk-dataset-event-publisher
           image: fdk-dataset-event-publisher
           imagePullPolicy: Always

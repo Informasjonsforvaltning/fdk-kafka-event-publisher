@@ -12,8 +12,6 @@ use fdk_kafka_event_publisher::{
 lazy_static! {
     static ref HARVESTER_API_URL: String =
         env::var("HARVESTER_API_URL").unwrap_or("http://localhost:8081".to_string());
-    static ref REASONING_API_URL: String =
-        env::var("REASONING_API_URL").unwrap_or("http://localhost:8082".to_string());
     static ref CONSUMER_NAME: String =
         env::var("CONSUMER_NAME").unwrap_or("fdk-service-event-publisher".to_string());
     static ref OUTPUT_TOPIC: String =
@@ -26,7 +24,6 @@ async fn main() {
         consumer_name: CONSUMER_NAME.clone(),
         routing_keys: vec![
             "public_services.harvested".to_string(),
-            "public_services.reasoned".to_string(),
         ],
     };
 
@@ -85,9 +82,7 @@ impl Resource for Service {
             ServiceEventType::ServiceHarvested => {
                 http_get(format!("{}/public-services/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), id)).await
             }
-            ServiceEventType::ServiceReasoned => {
-                http_get(format!("{}/public-services/{}", REASONING_API_URL.as_str(), id)).await
-            }
+            ServiceEventType::ServiceReasoned => Err(Error::String("should not handle reasoned messages".to_string())),
             // Do not bother fetching graph for remove events
             ServiceEventType::ServiceRemoved => Ok("".to_string()),
         }?;

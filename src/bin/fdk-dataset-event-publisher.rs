@@ -12,8 +12,6 @@ use fdk_kafka_event_publisher::{
 lazy_static! {
     static ref HARVESTER_API_URL: String =
         env::var("HARVESTER_API_URL").unwrap_or("http://localhost:8081".to_string());
-    static ref REASONING_API_URL: String =
-        env::var("REASONING_API_URL").unwrap_or("http://localhost:8082".to_string());
     static ref CONSUMER_NAME: String =
         env::var("CONSUMER_NAME").unwrap_or("fdk-dataset-event-publisher".to_string());
     static ref OUTPUT_TOPIC: String =
@@ -26,7 +24,6 @@ async fn main() {
         consumer_name: CONSUMER_NAME.clone(),
         routing_keys: vec![
             "datasets.harvested".to_string(),
-            "datasets.reasoned".to_string(),
         ],
     };
 
@@ -85,9 +82,7 @@ impl Resource for Dataset {
             DatasetEventType::DatasetHarvested => {
                 http_get(format!("{}/datasets/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), id)).await
             }
-            DatasetEventType::DatasetReasoned => {
-                http_get(format!("{}/datasets/{}", REASONING_API_URL.as_str(), id)).await
-            }
+            DatasetEventType::DatasetReasoned => Err(Error::String("should not handle reasoned messages".to_string())),
             // Do not bother fetching graph for remove events
             DatasetEventType::DatasetRemoved => Ok("".to_string()),
         }?;
