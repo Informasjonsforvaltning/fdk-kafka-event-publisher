@@ -22,7 +22,7 @@ jobs:
     strategy:
       matrix:
         app_name: [fdk-dataset-event-publisher, fdk-data-service-event-publisher, fdk-concept-event-publisher, fdk-information-model-event-publisher, fdk-event-event-publisher, fdk-service-event-publisher]
-    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
+    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@feat/hos/github-packages
     with:
       app_name: ${{ matrix.app_name }}
       environment: staging
@@ -37,7 +37,7 @@ jobs:
     name: Deploy publishers to staging environment
     if: github.event.pull_request.draft == false
     needs: [test, build]
-    uses: Informasjonsforvaltning/workflows/.github/workflows/kustomize-deploy.yaml@main
+    uses: Informasjonsforvaltning/workflows/.github/workflows/kustomize-deploy.yaml@feat/hos/github-packages
     with:
       app_name: fdk-kafka-event-publisher
       environment: staging
