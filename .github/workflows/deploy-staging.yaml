@@ -24,14 +24,13 @@ jobs:
     strategy:
       matrix:
         app_name: [fdk-dataset-event-publisher, fdk-data-service-event-publisher, fdk-concept-event-publisher, fdk-information-model-event-publisher, fdk-event-event-publisher, fdk-service-event-publisher]
-    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@feat/hos/github-packages
+    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
     with:
       app_name: ${{ matrix.app_name }}
       environment: staging
       build_env: true
       build_env_name: BINARY
       build_env_value: ${{ matrix.app_name }}
-      mono_repo: true
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GCP_SA_DIGDIR_FDK_GCR_KEY: ${{ secrets.GCP_SA_DIGDIR_FDK_GCR_KEY }}
@@ -40,12 +39,11 @@ jobs:
     name: Deploy publishers to staging environment
     if: github.event.pull_request.draft == false
     needs: [test, build]
-    uses: Informasjonsforvaltning/workflows/.github/workflows/kustomize-deploy.yaml@feat/hos/github-packages
+    uses: Informasjonsforvaltning/workflows/.github/workflows/kustomize-deploy.yaml@main
     with:
       app_name: fdk-kafka-event-publisher
       environment: staging
       cluster: digdir-fdk-dev
-      mono_repo: true
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       DIGDIR_FDK_AUTODEPLOY: ${{ secrets.DIGDIR_FDK_DEV_AUTODEPLOY }}
