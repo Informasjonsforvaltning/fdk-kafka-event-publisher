@@ -1,4 +1,4 @@
-FROM rust:latest AS builder
+FROM rust:1.81-bookworm AS builder
 
 WORKDIR /build
 
@@ -6,11 +6,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     clang
 
 COPY ./ ./
-ARG BINARY
-RUN cargo build --release --bin ${BINARY}
+
+RUN cargo build --release --bin fdk-concept-event-publisher
 
 
-FROM debian:bookworm-slim
+FROM debian:bookworm-20241016-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
