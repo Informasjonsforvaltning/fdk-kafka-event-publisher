@@ -6,8 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     clang
 
 COPY ./ ./
-
-RUN cargo build --release --bin fdk-concept-event-publisher
+ARG BINARY
+RUN cargo build --release --bin ${BINARY}
 
 
 FROM debian:bookworm-20241016-slim
