@@ -6,21 +6,11 @@ metadata:
   labels:
     fdk.service: fdk-event-event-publisher
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      fdk.service: fdk-event-event-publisher
-  strategy:
-    type: RollingUpdate
   template:
-    metadata:
-      labels:
-        fdk.service: fdk-event-event-publisher
-      annotations:
-        prometheus.io/scrape: "true"
     spec:
       containers:
-        - env:
+        - name: fdk-event-event-publisher
+          env:
           - name: SCHEMA_REGISTRY
             valueFrom:
               secretKeyRef:
@@ -56,20 +46,3 @@ spec:
               secretKeyRef:
                 name: commonurl-prod
                 key: FDK_EVENT_HARVESTER_URI
-          name: fdk-event-event-publisher
-          image: fdk-event-event-publisher
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
-          resources:
-            requests:
-              memory: "100Mi"
-          livenessProbe:
-            exec:
-              command:
-                - "true"
-          readinessProbe:
-            exec:
-              command:
-                - "true"
-      restartPolicy: Always
