@@ -8,3 +8,22 @@ resources:
   - service-fdk-event-event-publisher.yaml
   - service-fdk-information-model-event-publisher.yaml
   - service-fdk-service-event-publisher.yaml
+images:
+  - name: fdk-dataset-event-publisher
+    newName: eu.gcr.io/digdir-fdk-infra/fdk-dataset-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
+  - name: fdk-data-service-event-publisher
+    newName: eu.gcr.io/digdir-fdk-infra/fdk-data-service-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
+  - name: fdk-concept-event-publisher
+    newName: eu.gcr.io/digdir-fdk-infra/fdk-concept-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
+  - name: fdk-event-event-publisher
+    newName: eu.gcr.io/digdir-fdk-infra/fdk-event-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
+  - name: fdk-information-model-event-publisher
+    newName: eu.gcr.io/digdir-fdk-infra/fdk-information-model-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
+  - name: fdk-service-event-publisher
+    newName: eu.gcr.io/digdir-fdk-infra/fdk-service-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
