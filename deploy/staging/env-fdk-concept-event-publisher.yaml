@@ -2,25 +2,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fdk-dataset-event-publisher
+  name: fdk-concept-event-publisher
   labels:
-    fdk.service: fdk-dataset-event-publisher
+    fdk.service: fdk-concept-event-publisher
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      fdk.service: fdk-dataset-event-publisher
-  strategy:
-    type: RollingUpdate
   template:
-    metadata:
-      labels:
-        fdk.service: fdk-dataset-event-publisher
-      annotations:
-        prometheus.io/scrape: "true"
     spec:
       containers:
-        - env:
+        - name: fdk-concept-event-publisher
+          env:
           - name: SCHEMA_REGISTRY
             valueFrom:
               secretKeyRef:
@@ -55,24 +45,4 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: commonurl-staging
-                key: FDK_DATASET_HARVESTER_URI
-          name: fdk-dataset-event-publisher
-          image: fdk-dataset-event-publisher
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
-          resources:
-            requests:
-              memory: 100Mi
-              cpu: 10m
-            limits:
-              memory: 100Mi
-          livenessProbe:
-            exec:
-              command:
-                - "true"
-          readinessProbe:
-            exec:
-              command:
-                - "true"
-      restartPolicy: Always
+                key: FDK_CONCEPT_HARVESTER_URI

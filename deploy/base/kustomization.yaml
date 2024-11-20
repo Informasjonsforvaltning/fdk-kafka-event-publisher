@@ -2,9 +2,34 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - deployment-fdk-concept-event-publisher.yaml
+  - deployment-fdk-data-service-event-publisher.yaml
+  - deployment-fdk-dataset-event-publisher.yaml
+  - deployment-fdk-event-event-publisher.yaml
+  - deployment-fdk-information-model-event-publisher.yaml
+  - deployment-fdk-service-event-publisher.yaml
   - service-fdk-dataset-event-publisher.yaml
   - service-fdk-data-service-event-publisher.yaml
   - service-fdk-concept-event-publisher.yaml
   - service-fdk-event-event-publisher.yaml
   - service-fdk-information-model-event-publisher.yaml
   - service-fdk-service-event-publisher.yaml
+images:
+  - name: fdk-dataset-event-publisher
+    newName: ghcr.io/informasjonsforvaltning/fdk-kafka-event-publisher/fdk-dataset-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
+  - name: fdk-data-service-event-publisher
+    newName: ghcr.io/informasjonsforvaltning/fdk-kafka-event-publisher/fdk-data-service-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
+  - name: fdk-concept-event-publisher
+    newName: ghcr.io/informasjonsforvaltning/fdk-kafka-event-publisher/fdk-concept-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
+  - name: fdk-event-event-publisher
+    newName: ghcr.io/informasjonsforvaltning/fdk-kafka-event-publisher/fdk-event-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
+  - name: fdk-information-model-event-publisher
+    newName: ghcr.io/informasjonsforvaltning/fdk-kafka-event-publisher/fdk-information-model-event-publisher
+    newTag: $(GIT_COMMIT_SHA)
+  - name: fdk-service-event-publisher
+    newName: ghcr.io/informasjonsforvaltning/fdk-kafka-event-publisher/fdk-service-event-publisher
+    newTag: $(GIT_COMMIT_SHA)

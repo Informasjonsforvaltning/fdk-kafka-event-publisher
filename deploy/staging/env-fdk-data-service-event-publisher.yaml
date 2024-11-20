@@ -2,25 +2,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fdk-information-model-event-publisher
+  name: fdk-data-service-event-publisher
   labels:
-    fdk.service: fdk-information-model-event-publisher
+    fdk.service: fdk-data-service-event-publisher
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      fdk.service: fdk-information-model-event-publisher
-  strategy:
-    type: RollingUpdate
   template:
-    metadata:
-      labels:
-        fdk.service: fdk-information-model-event-publisher
-      annotations:
-        prometheus.io/scrape: "true"
     spec:
       containers:
-        - env:
+        - name: fdk-data-service-event-publisher
+          env:
           - name: SCHEMA_REGISTRY
             valueFrom:
               secretKeyRef:
@@ -55,24 +45,4 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: commonurl-staging
-                key: FDK_INFORMATION_MODEL_HARVESTER_URI
-          name: fdk-information-model-event-publisher
-          image: fdk-information-model-event-publisher
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
-          resources:
-            requests:
-              memory: 100Mi
-              cpu: 10m
-            limits:
-              memory: 100Mi
-          livenessProbe:
-            exec:
-              command:
-                - "true"
-          readinessProbe:
-            exec:
-              command:
-                - "true"
-      restartPolicy: Always
+                key: FDK_DATASERVICE_HARVESTER_URI

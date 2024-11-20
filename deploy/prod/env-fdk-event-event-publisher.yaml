@@ -6,70 +6,43 @@ metadata:
   labels:
     fdk.service: fdk-event-event-publisher
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      fdk.service: fdk-event-event-publisher
-  strategy:
-    type: RollingUpdate
   template:
-    metadata:
-      labels:
-        fdk.service: fdk-event-event-publisher
-      annotations:
-        prometheus.io/scrape: "true"
     spec:
       containers:
-        - env:
+        - name: fdk-event-event-publisher
+          env:
           - name: SCHEMA_REGISTRY
             valueFrom:
               secretKeyRef:
-                name: fdk-metadata-quality-demo
+                name: fdk-metadata-quality-prod
                 key: SCHEMA_REGISTRY
           - name: BROKERS
             valueFrom:
               secretKeyRef:
-                name: fdk-metadata-quality-demo
+                name: fdk-metadata-quality-prod
                 key: BROKERS
           - name: RABBITMQ_USERNAME
             valueFrom:
               secretKeyRef:
-                name: rabbitmq-demo
+                name: rabbitmq-prod
                 key: RABBITMQ_USERNAME
           - name: RABBITMQ_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: rabbitmq-demo
+                name: rabbitmq-prod
                 key: RABBITMQ_PASSWORD
           - name: RABBITMQ_HOST
             valueFrom:
               secretKeyRef:
-                name: rabbitmq-demo
+                name: rabbitmq-prod
                 key: RABBITMQ_HOST
           - name: RABBITMQ_PORT
             valueFrom:
               secretKeyRef:
-                name: rabbitmq-demo
+                name: rabbitmq-prod
                 key: RABBITMQ_PORT
           - name: HARVESTER_API_URL
             valueFrom:
               secretKeyRef:
-                name: commonurl-demo
+                name: commonurl-prod
                 key: FDK_EVENT_HARVESTER_URI
-          name: fdk-event-event-publisher
-          image: fdk-event-event-publisher
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
-          resources:
-            requests:
-              memory: "100Mi"
-          livenessProbe:
-            exec:
-              command:
-                - "true"
-          readinessProbe:
-            exec:
-              command:
-                - "true"
-      restartPolicy: Always

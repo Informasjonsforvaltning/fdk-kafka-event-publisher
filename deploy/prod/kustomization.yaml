@@ -3,29 +3,30 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: prod
 resources:
-  - deployment-fdk-dataset-event-publisher.yaml
-  - deployment-fdk-data-service-event-publisher.yaml
-  - deployment-fdk-concept-event-publisher.yaml
-  - deployment-fdk-event-event-publisher.yaml
-  - deployment-fdk-information-model-event-publisher.yaml
-  - deployment-fdk-service-event-publisher.yaml
   - ../base
-images:
-  - name: fdk-dataset-event-publisher
-    newName: eu.gcr.io/digdir-fdk-infra/fdk-dataset-event-publisher
-    newTag: $(GIT_COMMIT_SHA)
-  - name: fdk-data-service-event-publisher
-    newName: eu.gcr.io/digdir-fdk-infra/fdk-data-service-event-publisher
-    newTag: $(GIT_COMMIT_SHA)
-  - name: fdk-concept-event-publisher
-    newName: eu.gcr.io/digdir-fdk-infra/fdk-concept-event-publisher
-    newTag: $(GIT_COMMIT_SHA)
-  - name: fdk-event-event-publisher
-    newName: eu.gcr.io/digdir-fdk-infra/fdk-event-event-publisher
-    newTag: $(GIT_COMMIT_SHA)
-  - name: fdk-information-model-event-publisher
-    newName: eu.gcr.io/digdir-fdk-infra/fdk-information-model-event-publisher
-    newTag: $(GIT_COMMIT_SHA)
-  - name: fdk-service-event-publisher
-    newName: eu.gcr.io/digdir-fdk-infra/fdk-service-event-publisher
-    newTag: $(GIT_COMMIT_SHA)
+
+patches:
+  - path: env-fdk-concept-event-publisher.yaml
+    target:
+      kind: Deployment
+      name: fdk-concept-event-publisher
+  - path: env-fdk-dataset-event-publisher.yaml
+    target:
+      kind: Deployment
+      name: fdk-dataset-event-publisher
+  - path: env-fdk-data-service-event-publisher.yaml
+    target:
+      kind: Deployment
+      name: fdk-data-service-event-publisher
+  - path: env-fdk-event-event-publisher.yaml
+    target:
+      kind: Deployment
+      name: fdk-event-event-publisher
+  - path: env-fdk-information-model-event-publisher.yaml
+    target:
+      kind: Deployment
+      name: fdk-information-model-event-publisher
+  - path: env-fdk-service-event-publisher.yaml
+    target:
+      kind: Deployment
+      name: fdk-service-event-publisher

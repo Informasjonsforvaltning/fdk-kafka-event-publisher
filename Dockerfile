@@ -1,4 +1,4 @@
-FROM rust:latest AS builder
+FROM rust:1.81-bookworm AS builder
 
 WORKDIR /build
 
@@ -10,7 +10,7 @@ ARG BINARY
 RUN cargo build --release --bin ${BINARY}
 
 
-FROM debian:bookworm-slim
+FROM debian:bookworm-20241016-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
