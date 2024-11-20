@@ -10,7 +10,7 @@ spec:
     spec:
       containers:
         - name: fdk-data-service-event-publisher
-        - env:
+          env:
           - name: SCHEMA_REGISTRY
             valueFrom:
               secretKeyRef:
