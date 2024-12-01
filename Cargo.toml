@@ -21,4 +21,4 @@ tokio = { version = "1.41.1", features = ["full"] }
 tokio-executor-trait = "2.1.3"
 tokio-reactor-trait = "1.1.0"
 tracing = "0.1.40"
-tracing-subscriber =  { version = "0.3.18", features = ["json"] }
+tracing-subscriber =  { version = "0.3.19", features = ["json"] }
