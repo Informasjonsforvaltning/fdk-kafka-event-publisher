@@ -10,8 +10,6 @@ jobs:
   test:
     name: Run tests when merging to main
     uses: Informasjonsforvaltning/workflows/.github/workflows/test-rust.yaml@main
-    with:
-      toolchain_tc: nightly-2024-11-01
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
