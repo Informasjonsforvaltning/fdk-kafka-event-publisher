@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     name: Run tests when merging to main
-    uses: Informasjonsforvaltning/workflows/.github/workflows/test-rust.yaml@main
+    uses: Informasjonsforvaltning/workflows/.github/workflows/test-rust.yaml@chore/not/test
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
