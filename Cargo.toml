@@ -10,7 +10,7 @@ chrono = "0.4.38"
 lapin = "2.5.0"
 lazy_static = "1.5.0"
 prometheus = "0.13.4"
-rdkafka = "0.36.2"
+rdkafka = "0.37.0"
 reqwest = "0.12.9"
 schema_registry_converter = { version = "4.2.0", features = ["avro"] }
 serde = { version = "1.0.215", features = ["derive"] }
