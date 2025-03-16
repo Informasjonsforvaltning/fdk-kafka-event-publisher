@@ -17,7 +17,7 @@ serde = { version = "1.0.215", features = ["derive"] }
 serde_derive = "1.0.215"
 serde_json = "1.0.132"
 thiserror = "2.0.3"
-tokio = { version = "1.41.1", features = ["full"] }
+tokio = { version = "1.44.1", features = ["full"] }
 tokio-executor-trait = "2.1.3"
 tokio-reactor-trait = "1.1.0"
 tracing = "0.1.40"
