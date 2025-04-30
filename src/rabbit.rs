@@ -1,7 +1,7 @@
 use lapin::{
-    options::{BasicConsumeOptions, QueueBindOptions, QueueDeclareOptions},
+    options::{BasicConsumeOptions, QueueBindOptions, QueueDeclareOptions, ExchangeDeclareOptions},
     types::FieldTable,
-    Channel, Connection, ConnectionProperties, Consumer,
+    Channel, Connection, ConnectionProperties, Consumer, ExchangeKind
 };
 use serde::Deserialize;
 
@@ -58,6 +58,14 @@ pub async fn setup(
     consumer_name: &str,
     routing_keys: &Vec<String>,
 ) -> Result<(), RabbitError> {
+    channel
+        .exchange_declare(
+        "harvests",
+        ExchangeKind::Topic,
+        ExchangeDeclareOptions::default(),
+        FieldTable::default(),
+    ).await?;
+    
     channel
         .queue_declare(
             consumer_name,
