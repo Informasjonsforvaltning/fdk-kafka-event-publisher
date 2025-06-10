@@ -3,7 +3,7 @@ FROM rust:1-bookworm AS builder
 WORKDIR /build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    clang
+    clang && apt-get upgrade -y
 
 COPY ./ ./
 ARG BINARY
