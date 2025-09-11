@@ -4,29 +4,3 @@ kind: Kustomization
 namespace: prod
 resources:
   - ../base
-
-patches:
-  - path: env-fdk-concept-event-publisher.yaml
-    target:
-      kind: Deployment
-      name: fdk-concept-event-publisher
-  - path: env-fdk-dataset-event-publisher.yaml
-    target:
-      kind: Deployment
-      name: fdk-dataset-event-publisher
-  - path: env-fdk-data-service-event-publisher.yaml
-    target:
-      kind: Deployment
-      name: fdk-data-service-event-publisher
-  - path: env-fdk-event-event-publisher.yaml
-    target:
-      kind: Deployment
-      name: fdk-event-event-publisher
-  - path: env-fdk-information-model-event-publisher.yaml
-    target:
-      kind: Deployment
-      name: fdk-information-model-event-publisher
-  - path: env-fdk-service-event-publisher.yaml
-    target:
-      kind: Deployment
-      name: fdk-service-event-publisher
