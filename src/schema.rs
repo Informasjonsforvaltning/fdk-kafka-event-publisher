@@ -19,6 +19,8 @@ pub async fn setup_schema(
             schema_type: SchemaType::Avro,
             schema: event_config.schema.to_string(),
             references: vec![],
+            properties: Some(std::collections::HashMap::new()),
+            tags: Some(std::collections::HashMap::new()),
         },
     )
     .await?;
