@@ -45,7 +45,7 @@ fn connection_string() -> Result<String, RabbitError> {
 pub async fn connect() -> Result<Channel, RabbitError> {
     let options = ConnectionProperties::default()
         .with_executor(tokio_executor_trait::Tokio::current())
-        .with_reactor(tokio_reactor_trait::Tokio);
+        .with_reactor(tokio_reactor_trait::Tokio::default());
 
     let uri = connection_string()?;
     let connection = Connection::connect(&uri, options).await?;

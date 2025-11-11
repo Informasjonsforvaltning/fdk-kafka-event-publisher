@@ -154,10 +154,9 @@ async fn receive_message<R: Resource>(event_config: EventConfig, delivery: Deliv
         .inc();
     PROCESSING_TIME.observe(elapsed_millis as f64 / 1000.0);
 
-    delivery
-        .ack(BasicAckOptions::default())
-        .await
-        .unwrap_or_else(|e| tracing::error!(error = e.to_string(), "failed to ack message"));
+    if let Err(e) = delivery.ack(BasicAckOptions::default()).await {
+        tracing::error!(error = e.to_string(), "failed to ack message");
+    }
 }
 
 async fn handle_message<R: Resource>(
