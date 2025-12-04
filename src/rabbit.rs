@@ -17,6 +17,8 @@ pub enum RabbitError {
 pub struct HarvestReport {
     #[serde(alias = "startTime")]
     pub start_time: String,
+    #[serde(alias = "harvestRunId")]
+    pub harvest_run_id: Option<String>,
     #[serde(alias = "changedResources")]
     pub changed_resources: Vec<HarvestReportChange>,
     #[serde(alias = "removedResources")]

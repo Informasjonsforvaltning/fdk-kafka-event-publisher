@@ -57,7 +57,8 @@ pub trait Resource {
 
     async fn event(
         routing_key: &str,
-        id: String,
+        harvest_run_id: Option<String>,
+        fdk_id: String,
         timestamp: i64,
         change: ChangeType,
     ) -> Result<Option<Self::Event>, Error>;
@@ -206,6 +207,7 @@ async fn handle_message<R: Resource>(
                 &producer,
                 &event_config,
                 delivery.routing_key.as_str(),
+                element.harvest_run_id.clone(),
                 resource.fdk_id.clone(),
                 timestamp,
                 ChangeType::CreateOrUpdate,
@@ -213,7 +215,8 @@ async fn handle_message<R: Resource>(
             .await
             {
                 tracing::error!(
-                    id = resource.fdk_id,
+                    harvest_run_id = ?element.harvest_run_id,
+                    fdk_id = resource.fdk_id,
                     change = format!("{:?}", ChangeType::CreateOrUpdate),
                     error = e.to_string(),
                     "failed while handling event"
@@ -228,6 +231,7 @@ async fn handle_message<R: Resource>(
                     &producer,
                     &event_config,
                     delivery.routing_key.as_str(),
+                    element.harvest_run_id.clone(),
                     resource.fdk_id.clone(),
                     timestamp,
                     ChangeType::Remove,
@@ -253,18 +257,19 @@ async fn handle_event<R: Resource>(
     producer: &FutureProducer,
     event_config: &EventConfig,
     routing_key: &str,
-    id: String,
+    harvest_run_id: Option<String>,
+    fdk_id: String,
     timestamp: i64,
     change: ChangeType,
 ) -> Result<(), Error> {
     tracing::debug!(
         routing_key,
-        id = id.as_str(),
+        fdk_id = fdk_id.as_str(),
         change = format!("{:?}", change),
         "processing event"
     );
 
-    if let Some(event) = R::event(routing_key, id, timestamp, change).await? {
+    if let Some(event) = R::event(routing_key, harvest_run_id, fdk_id, timestamp, change).await? {
         send_event(&mut encoder, &producer, &event_config, event).await?;
     };
     Ok(())

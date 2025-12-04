@@ -43,6 +43,7 @@ async fn main() {
                             "symbols": ["CONCEPT_HARVESTED", "CONCEPT_REASONED", "CONCEPT_REMOVED"]
                         }
                     },
+                    {"name": "harvestRunId", "type": ["null", "string"]},
                     {"name": "fdkId", "type": "string"},
                     {"name": "graph", "type": "string"},
                     {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
@@ -69,7 +70,8 @@ impl Resource for Concept {
 
     async fn event(
         routing_key: &str,
-        id: String,
+        harvest_run_id: Option<String>,
+        fdk_id: String,
         timestamp: i64,
         report_change: ChangeType,
     ) -> Result<Option<Self::Event>, Error> {
@@ -89,7 +91,8 @@ impl Resource for Concept {
 
         Ok(Some(Self::Event {
             event_type,
-            fdk_id: id,
+            harvest_run_id,
+            fdk_id,
             graph,
             timestamp,
         }))
@@ -100,6 +103,8 @@ impl Resource for Concept {
 pub struct ConceptEvent {
     #[serde(rename = "type")]
     pub event_type: ConceptEventType,
+    #[serde(rename = "harvestRunId")]
+    pub harvest_run_id: Option<String>,
     #[serde(rename = "fdkId")]
     pub fdk_id: String,
     pub graph: String,

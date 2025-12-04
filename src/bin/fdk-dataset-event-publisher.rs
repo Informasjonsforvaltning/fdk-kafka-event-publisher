@@ -43,6 +43,7 @@ async fn main() {
                             "symbols": ["DATASET_HARVESTED", "DATASET_REASONED", "DATASET_REMOVED"]
                         }
                     },
+                    {"name": "harvestRunId", "type": ["null", "string"]},
                     {"name": "fdkId", "type": "string"},
                     {"name": "graph", "type": "string"},
                     {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
@@ -69,7 +70,8 @@ impl Resource for Dataset {
 
     async fn event(
         routing_key: &str,
-        id: String,
+        harvest_run_id: Option<String>,
+        fdk_id: String,
         timestamp: i64,
         report_change: ChangeType,
     ) -> Result<Option<Self::Event>, Error> {
@@ -80,7 +82,7 @@ impl Resource for Dataset {
 
         let graph = match event_type {
             DatasetEventType::DatasetHarvested => {
-                http_get(format!("{}/datasets/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), id)).await
+                http_get(format!("{}/datasets/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), fdk_id)).await
             }
             DatasetEventType::DatasetReasoned => Err(Error::String("should not handle reasoned messages".to_string())),
             // Do not bother fetching graph for remove events
@@ -89,7 +91,8 @@ impl Resource for Dataset {
 
         Ok(Some(Self::Event {
             event_type,
-            fdk_id: id,
+            harvest_run_id,
+            fdk_id,
             graph,
             timestamp,
         }))
@@ -100,6 +103,8 @@ impl Resource for Dataset {
 pub struct DatasetEvent {
     #[serde(rename = "type")]
     pub event_type: DatasetEventType,
+    #[serde(rename = "harvestRunId")]
+    pub harvest_run_id: Option<String>,
     #[serde(rename = "fdkId")]
     pub fdk_id: String,
     pub graph: String,
