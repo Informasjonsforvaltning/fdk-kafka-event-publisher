@@ -43,8 +43,8 @@ async fn main() {
                             "symbols": ["CONCEPT_HARVESTED", "CONCEPT_REASONED", "CONCEPT_REMOVED"]
                         }
                     },
-                    {"name": "harvestRunId", "type": ["null", "string"]},
-                    {"name": "uri", "type": ["null", "string"]},
+                    {"name": "harvestRunId", "type": ["null", "string"], "default": null},
+                    {"name": "uri", "type": ["null", "string"], "default": null},
                     {"name": "fdkId", "type": "string"},
                     {"name": "graph", "type": "string"},
                     {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
