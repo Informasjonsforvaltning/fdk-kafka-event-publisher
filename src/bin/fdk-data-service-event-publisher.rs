@@ -44,6 +44,7 @@ async fn main() {
                         }
                     },
                     {"name": "harvestRunId", "type": ["null", "string"]},
+                    {"name": "uri", "type": ["null", "string"]},
                     {"name": "fdkId", "type": "string"},
                     {"name": "graph", "type": "string"},
                     {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
@@ -72,6 +73,7 @@ impl Resource for DataService {
         routing_key: &str,
         harvest_run_id: Option<String>,
         fdk_id: String,
+        uri: Option<String>,
         timestamp: i64,
         report_change: ChangeType,
     ) -> Result<Option<Self::Event>, Error> {
@@ -82,7 +84,7 @@ impl Resource for DataService {
 
         let graph = match event_type {
             DataServiceEventType::DataServiceHarvested => {
-                http_get(format!("{}/dataservices/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), id)).await
+                http_get(format!("{}/dataservices/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), fdk_id)).await
             }
             DataServiceEventType::DataServiceReasoned => Err(Error::String("should not handle reasoned messages".to_string())),
             // Do not bother fetching graph for remove events
@@ -92,6 +94,7 @@ impl Resource for DataService {
         Ok(Some(Self::Event {
             event_type,
             harvest_run_id,
+            uri,
             fdk_id,
             graph,
             timestamp,
@@ -105,6 +108,7 @@ pub struct DataServiceEvent {
     pub event_type: DataServiceEventType,
     #[serde(rename = "harvestRunId")]
     pub harvest_run_id: Option<String>,
+    pub uri: Option<String>,
     #[serde(rename = "fdkId")]
     pub fdk_id: String,
     pub graph: String,
@@ -131,7 +135,6 @@ impl DataServiceEventType {
     fn from_routing_key(routing_key: &str) -> Result<Self, Error> {
         match routing_key {
             "dataservices.harvested" => Ok(Self::DataServiceHarvested),
-            "dataservices.reasoned" => Ok(Self::DataServiceReasoned),
             _ => Err(Error::String(format!(
                 "unknown routing key: '{}'",
                 routing_key

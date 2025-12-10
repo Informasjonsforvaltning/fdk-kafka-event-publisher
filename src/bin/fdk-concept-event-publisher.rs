@@ -44,6 +44,7 @@ async fn main() {
                         }
                     },
                     {"name": "harvestRunId", "type": ["null", "string"]},
+                    {"name": "uri", "type": ["null", "string"]},
                     {"name": "fdkId", "type": "string"},
                     {"name": "graph", "type": "string"},
                     {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
@@ -72,6 +73,7 @@ impl Resource for Concept {
         routing_key: &str,
         harvest_run_id: Option<String>,
         fdk_id: String,
+        uri: Option<String>,
         timestamp: i64,
         report_change: ChangeType,
     ) -> Result<Option<Self::Event>, Error> {
@@ -82,7 +84,7 @@ impl Resource for Concept {
 
         let graph = match event_type {
             ConceptEventType::ConceptHarvested => {
-                http_get(format!("{}/concepts/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), id)).await
+                http_get(format!("{}/concepts/{}?catalogrecords=true", HARVESTER_API_URL.as_str(), fdk_id)).await
             }
             ConceptEventType::ConceptReasoned => Err(Error::String("should not handle reasoned messages".to_string())),
             // Do not bother fetching graph for remove events
@@ -92,6 +94,7 @@ impl Resource for Concept {
         Ok(Some(Self::Event {
             event_type,
             harvest_run_id,
+            uri,
             fdk_id,
             graph,
             timestamp,
@@ -105,6 +108,7 @@ pub struct ConceptEvent {
     pub event_type: ConceptEventType,
     #[serde(rename = "harvestRunId")]
     pub harvest_run_id: Option<String>,
+    pub uri: Option<String>,
     #[serde(rename = "fdkId")]
     pub fdk_id: String,
     pub graph: String,
@@ -131,7 +135,6 @@ impl ConceptEventType {
     fn from_routing_key(routing_key: &str) -> Result<Self, Error> {
         match routing_key {
             "concepts.harvested" => Ok(Self::ConceptHarvested),
-            "concepts.reasoned" => Ok(Self::ConceptReasoned),
             _ => Err(Error::String(format!(
                 "unknown routing key: '{}'",
                 routing_key

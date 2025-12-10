@@ -44,6 +44,7 @@ async fn main() {
                         }
                     },
                     {"name": "harvestRunId", "type": ["null", "string"]},
+                    {"name": "uri", "type": ["null", "string"]},
                     {"name": "fdkId", "type": "string"},
                     {"name": "graph", "type": "string"},
                     {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"}
@@ -72,6 +73,7 @@ impl Resource for Dataset {
         routing_key: &str,
         harvest_run_id: Option<String>,
         fdk_id: String,
+        uri: Option<String>,
         timestamp: i64,
         report_change: ChangeType,
     ) -> Result<Option<Self::Event>, Error> {
@@ -92,6 +94,7 @@ impl Resource for Dataset {
         Ok(Some(Self::Event {
             event_type,
             harvest_run_id,
+            uri,
             fdk_id,
             graph,
             timestamp,
@@ -105,6 +108,7 @@ pub struct DatasetEvent {
     pub event_type: DatasetEventType,
     #[serde(rename = "harvestRunId")]
     pub harvest_run_id: Option<String>,
+    pub uri: Option<String>,
     #[serde(rename = "fdkId")]
     pub fdk_id: String,
     pub graph: String,
@@ -131,7 +135,6 @@ impl DatasetEventType {
     fn from_routing_key(routing_key: &str) -> Result<Self, Error> {
         match routing_key {
             "datasets.harvested" => Ok(Self::DatasetHarvested),
-            "datasets.reasoned" => Ok(Self::DatasetReasoned),
             _ => Err(Error::String(format!(
                 "unknown routing key: '{}'",
                 routing_key
