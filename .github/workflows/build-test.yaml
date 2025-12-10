@@ -11,15 +11,28 @@ on:
       - main
 
 jobs:
-  build-fdk-kafka-event-publisher:
-    name: Build when pull request is created
-    if: ${{ github.actor != 'dependabot[bot]' &&  github.event.pull_request.draft == false }}
-    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
-    with:
-      app_name: fdk-kafka-event-publisher
-      environment: test
-      java_version: '17'
-      coverage_file_path: ./target/site/jacoco/jacoco.xml
+  test:
+    name: Run tests when pull request is created
+    if: github.event.pull_request.draft == false
+    uses: Informasjonsforvaltning/workflows/.github/workflows/test-rust.yaml@main
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    name: Build event-publishers when pull request is created
+    if: ${{ github.actor != 'dependabot[bot]' && github.event.pull_request.draft == false }}
+    needs: [test]
+    strategy:
+      matrix:
+        app_name: [fdk-dataset-event-publisher, fdk-data-service-event-publisher, fdk-concept-event-publisher, fdk-information-model-event-publisher, fdk-event-event-publisher, fdk-service-event-publisher]
+    uses: Informasjonsforvaltning/workflows/.github/workflows/build-push.yaml@main
+    with:
+      app_name: ${{ matrix.app_name }}
+      environment: test
+      build_env: true
+      build_env_name: BINARY
+      build_env_value: ${{ matrix.app_name }}
+      monorepo_app: true
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
