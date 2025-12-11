@@ -355,7 +355,7 @@ async fn handle_message<R: Resource>(
                 );
 
                 let harvest_event = HarvestEvent {
-                    phase: HarvestPhase::ResourceProcessing,
+                    phase: HarvestPhase::Harvesting,
                     data_source_id: data_source_id.clone(),
                     run_id: run_id.clone(),
                     data_type,
