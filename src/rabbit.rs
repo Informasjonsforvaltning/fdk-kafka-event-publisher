@@ -23,6 +23,8 @@ pub struct HarvestReport {
     pub run_id: Option<String>,
     #[serde(alias = "dataSourceId")]
     pub data_source_id: Option<String>,
+    #[serde(alias = "errorMessage")]
+    pub error_message: Option<String>,
     #[serde(alias = "changedResources")]
     pub changed_resources: Vec<HarvestReportChange>,
     #[serde(alias = "removedResources")]

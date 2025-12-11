@@ -331,6 +331,7 @@ async fn handle_message<R: Resource>(
             data_source_id = ?element.data_source_id,
             start_time = element.start_time.as_str(),
             end_time = ?element.end_time,
+            error_message = ?element.error_message,
             changed_resources = element.changed_resources.len(),
             removed_resources = element.removed_resources.as_ref().map_or(0, |r| r.len()),
             "processing harvest report element"
@@ -365,7 +366,7 @@ async fn handle_message<R: Resource>(
                     timestamp,
                     start_time: Some(element.start_time.clone()),
                     end_time: element.end_time.clone(),
-                    error_message: None,
+                    error_message: element.error_message.clone(),
                     changed_resources_count: Some(changed_count),
                     unchanged_resources_count: Some(0),
                     removed_resources_count: Some(removed_count),
