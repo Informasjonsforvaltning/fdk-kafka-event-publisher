@@ -21,12 +21,9 @@
       }
     },
     {
-      "name": "dataSourceId",
-      "type": "string"
-    },
-    {
       "name": "runId",
-      "type": "string",
+      "type": ["null", "string"],
+      "default": null, 
       "doc": "Unique identifier (UUID) for the harvest run this event belongs to"
     },
     {
@@ -43,6 +40,11 @@
           "event"
         ]
       }
+    },
+    {
+      "name": "dataSourceId",
+      "type": ["null", "string"],
+      "default": null
     },
     {
       "name": "dataSourceUrl",
@@ -63,11 +65,6 @@
       "name": "resourceUri",
       "type": ["null", "string"],
       "default": null
-    },
-    {
-      "name": "timestamp",
-      "type": "long",
-      "logicalType": "timestamp-millis"
     },
     {
       "name": "startTime",
