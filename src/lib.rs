@@ -273,7 +273,18 @@ async fn handle_message<R: Resource>(
     event_config: &EventConfig,
     delivery: &Delivery,
 ) -> Result<(), Error> {
+    tracing::info!(
+        routing_key = delivery.routing_key.as_str(),
+        "received harvest report message"
+    );
+
     let reports: Vec<HarvestReport> = serde_json::from_slice(&delivery.data)?;
+
+    tracing::info!(
+        routing_key = delivery.routing_key.as_str(),
+        report_count = reports.len(),
+        "parsed harvest reports"
+    );
 
     let changed_resource_count = reports
         .iter()
@@ -300,7 +311,7 @@ async fn handle_message<R: Resource>(
         reports = reports.len(),
         changed_resource_count,
         removed_resource_count,
-        "processing event"
+        "processing harvest reports"
     );
     let mut encoder = AvroEncoder::new(sr_settings);
 
@@ -315,6 +326,16 @@ async fn handle_message<R: Resource>(
         let timestamp = DateTime::parse_from_str(&element.start_time, "%Y-%m-%d %H:%M:%S%.f %z")?
             .timestamp_millis();
 
+        tracing::debug!(
+            run_id = ?element.run_id,
+            data_source_id = ?element.data_source_id,
+            start_time = element.start_time.as_str(),
+            end_time = ?element.end_time,
+            changed_resources = element.changed_resources.len(),
+            removed_resources = element.removed_resources.as_ref().map_or(0, |r| r.len()),
+            "processing harvest report element"
+        );
+
         // Produce HarvestEvent if report contains a runId
         if let Some(run_id) = &element.run_id {
             if let Some(data_type) = routing_key_to_data_type(delivery.routing_key.as_str()) {
@@ -322,6 +343,15 @@ async fn handle_message<R: Resource>(
                 
                 let changed_count = element.changed_resources.len() as i32;
                 let removed_count = element.removed_resources.as_ref().map_or(0, |r| r.len()) as i32;
+
+                tracing::info!(
+                    run_id = run_id.as_str(),
+                    data_source_id = data_source_id.as_str(),
+                    data_type = ?data_type,
+                    changed_count,
+                    removed_count,
+                    "producing harvest event"
+                );
 
                 let harvest_event = HarvestEvent {
                     phase: HarvestPhase::ResourceProcessing,
@@ -341,14 +371,42 @@ async fn handle_message<R: Resource>(
                     removed_resources_count: Some(removed_count),
                 };
 
-                if let Err(e) = send_event(&mut encoder, producer, &harvest_event_config, harvest_event).await {
-                    tracing::error!(
-                        error = e.to_string(),
-                        "failed to send harvest event"
-                    );
+                match send_event(&mut encoder, producer, &harvest_event_config, harvest_event).await {
+                    Ok(_) => {
+                        tracing::info!(
+                            run_id = run_id.as_str(),
+                            data_source_id = data_source_id.as_str(),
+                            data_type = ?data_type,
+                            "harvest event produced successfully"
+                        );
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            run_id = run_id.as_str(),
+                            data_source_id = data_source_id.as_str(),
+                            error = e.to_string(),
+                            "failed to send harvest event"
+                        );
+                    }
                 }
+            } else {
+                tracing::warn!(
+                    routing_key = delivery.routing_key.as_str(),
+                    run_id = run_id.as_str(),
+                    "could not determine data type from routing key, skipping harvest event"
+                );
             }
+        } else {
+            tracing::debug!(
+                "harvest report element has no run_id, skipping harvest event production"
+            );
         }
+
+        tracing::debug!(
+            run_id = ?element.run_id,
+            changed_resources_count = element.changed_resources.len(),
+            "processing changed resources from harvest report"
+        );
 
         for resource in element.changed_resources {
             if let Err(e) = handle_event::<R>(
@@ -367,6 +425,7 @@ async fn handle_message<R: Resource>(
                 tracing::error!(
                     harvest_run_id = ?element.run_id,
                     fdk_id = resource.fdk_id,
+                    uri = ?resource.uri,
                     change = format!("{:?}", ChangeType::CreateOrUpdate),
                     error = e.to_string(),
                     "failed while handling event"
@@ -374,7 +433,13 @@ async fn handle_message<R: Resource>(
             }
         }
 
-        if let Some(removed_resources) = element.removed_resources {
+        if let Some(removed_resources) = &element.removed_resources {
+            tracing::debug!(
+                run_id = ?element.run_id,
+                removed_resources_count = removed_resources.len(),
+                "processing removed resources from harvest report"
+            );
+
             for resource in removed_resources {
                 if let Err(e) = handle_event::<R>(
                     &mut encoder,
@@ -391,6 +456,7 @@ async fn handle_message<R: Resource>(
                 {
                     tracing::error!(
                         id = resource.fdk_id,
+                        uri = ?resource.uri,
                         change = format!("{:?}", ChangeType::Remove),
                         error = e.to_string(),
                         "failed while handling event"
